@@ -1,8 +1,9 @@
 """
 CONCORDIA ADK Agent Factory
 
-Creates agent hierarchy dynamically based on selected mediator style
-and case type. The instruction prompts change based on configuration.
+Creates agent hierarchy dynamically based on selected mediator style,
+case type, and an optional mediation objective set by the session.
+The instruction prompts change based on configuration.
 """
 
 from __future__ import annotations
@@ -39,7 +40,16 @@ PROPOSE 2-3 RESOLUTION PATHS, each with:
 - Risks and mitigations
 - Process steps: who acts first, what's documented, timeline, verification
 
+COMMON GROUND FRAMEWORK:
+After analyzing the graph, synthesize a "Common Ground Proposal":
+- Lead with what BOTH parties share (shared interests, shared fears)
+- Build the agreement zone from shared ground outward
+- Use language both parties have used: reference their actual words from the graph
+- Name the proposal after something both parties value: "The [shared value] Agreement"
+- Include implementation milestones that give each party early wins
+
 Call get_theory_guidance() for the most applicable theory to get case-specific techniques.
+Call generate_resolution_report() for a comprehensive structured report.
 
 TONE: Hopeful but honest. Creative but practical. Conversational, not a report.
 
@@ -79,23 +89,25 @@ PARTY AWARENESS:
 
 HOW TO START:
 - "Tell me what's going on." / "I'm here to listen. What's on your mind?"
+- If a mediation objective was given, acknowledge it briefly: "I understand you're here to work on [objective]."
 - Keep it casual and warm.
 
 CONVERSATION RULES:
 - Ask ONE question at a time. Never rapid-fire.
-- Acknowledge what they said → extract with tools → follow up naturally.
+- Acknowledge what they said -> extract with tools -> follow up naturally.
 - NEVER announce tool calls. Don't say "I'm recording that." Just DO it silently.
-- Match their energy. Upset → acknowledge. Analytical → be precise.
+- Match their energy. Upset -> acknowledge. Analytical -> be precise.
+- Every 4-5 exchanges, briefly summarize: "So let me make sure I'm tracking..."
 
 EXTRACTION TRIGGERS (silently call tools when you hear these):
-- Names/parties → add_actor
-- "I want...", accusations, demands → add_claim
-- "What I really need is...", deeper motivation → add_interest
-- Deadlines, legal limits, budget → add_constraint
-- "They have the power to...", threats → add_leverage
-- "They promised...", "We agreed..." → add_commitment
-- "What happened was...", timeline → add_event
-- Framing language: victim, betrayal, unfair → add_narrative
+- Names/parties -> add_actor
+- "I want...", accusations, demands -> add_claim
+- "What I really need is...", deeper motivation -> add_interest
+- Deadlines, legal limits, budget -> add_constraint
+- "They have the power to...", threats -> add_leverage
+- "They promised...", "We agreed..." -> add_commitment
+- "What happened was...", timeline -> add_event
+- Framing language: victim, betrayal, unfair -> add_narrative
 
 DOCUMENT HANDLING:
 - On [DOCUMENT UPLOAD] messages, switch to exhaustive extraction mode.
@@ -105,8 +117,8 @@ DOCUMENT HANDLING:
 CASE INFO: Call set_case_info once you have enough context.
 
 PACING:
-- Every 4-5 exchanges, briefly summarize: "So let me make sure I'm tracking..."
-- After substantial input, transfer to verifier_agent.
+- After substantial input, call run_health_check() and if score < 75, suggest the other party speaks.
+- When health score reaches 75%+, transfer to verifier_agent.
 
 VOICE MODE:
 - Keep responses to 2-3 sentences MAX.
@@ -124,9 +136,19 @@ Everything you share stays in this session. Tell me — what's going on?"
 Keep it warm, brief, and let the listener do the work."""
 
 
-def build_agents(mediator_style: str = "empathetic", case_type: str = "workplace"):
-    """Build the agent hierarchy with the given style and case type."""
+def build_agents(
+    mediator_style: str = "empathetic",
+    case_type: str = "workplace",
+    objective: str = "",
+):
+    """Build the agent hierarchy with the given style, case type, and optional objective.
 
+    Args:
+        mediator_style: One of the keys in MEDIATOR_STYLES.
+        case_type: One of the keys in CASE_TYPES.
+        objective: Free-text mediation objective set by the facilitator or parties.
+                   Injected into all agent instructions if provided.
+    """
     style = MEDIATOR_STYLES.get(mediator_style, MEDIATOR_STYLES["empathetic"])
     case = CASE_TYPES.get(case_type, CASE_TYPES["workplace"])
 
@@ -134,11 +156,22 @@ def build_agents(mediator_style: str = "empathetic", case_type: str = "workplace
     case_mod = case["context_prompt"]
     probing = "\n".join(f"- {q}" for q in case.get("probing_questions", []))
 
+    objective_block = ""
+    if objective and objective.strip():
+        objective_block = f"""
+MEDIATION OBJECTIVE (set by facilitator or parties):
+{objective.strip()}
+
+This objective shapes what a successful outcome looks like. Keep it in mind
+when extracting interests, proposing resolutions, and evaluating options.
+Reference it when relevant: "Given your goal of {objective.strip()[:80]}..."
+"""
+
     resolver = Agent(
         name="resolver_agent",
         model=MODEL,
         description="Finds resolution paths using graph analysis and theory matching.",
-        instruction=f"{RESOLVER_BASE}\n\n{style_mod}\n\n{case_mod}",
+        instruction=f"{RESOLVER_BASE}\n\n{objective_block}\n\n{style_mod}\n\n{case_mod}",
         tools=ANALYZER_TOOLS,
     )
 
@@ -146,7 +179,7 @@ def build_agents(mediator_style: str = "empathetic", case_type: str = "workplace
         name="verifier_agent",
         model=MODEL,
         description="Checks graph completeness and readiness for resolution.",
-        instruction=f"{VERIFIER_BASE}\n\n{style_mod}",
+        instruction=f"{VERIFIER_BASE}\n\n{objective_block}\n\n{style_mod}",
         tools=ANALYZER_TOOLS,
         sub_agents=[resolver],
     )
@@ -156,6 +189,8 @@ def build_agents(mediator_style: str = "empathetic", case_type: str = "workplace
         model=MODEL,
         description="Natural conversation + silent graph building.",
         instruction=f"""{LISTENER_BASE}
+
+{objective_block}
 
 {style_mod}
 
@@ -178,5 +213,5 @@ PROBING QUESTIONS (use naturally, don't read as a list):
     return root
 
 
-# Default agent (rebuilt when user changes style/case type)
+# Default agent (rebuilt when user changes style/case type/objective)
 root_agent = build_agents("empathetic", "workplace")
