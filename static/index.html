@@ -6,6 +6,7 @@
 <title>CONCORDIA — Live AI Mediation</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 <style>
+/* ===== DESIGN TOKENS ===== */
 :root {
   --bg: #0a0a0f;
   --panel: #12121a;
@@ -20,1350 +21,1422 @@
   --gold: #d4a844;
   --blue: #4a90d9;
   --orange: #d98a4a;
+  --purple: #9b59b6;
 }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Courier New',monospace;font-size:13px;overflow:hidden}
+.hidden{display:none!important}
+button{font-family:inherit;cursor:pointer;border:none;outline:none;transition:opacity .15s,background .15s}
+button:disabled{opacity:.35;cursor:not-allowed}
+input,textarea{font-family:inherit;outline:none;color:var(--text)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+*{scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 
-* { margin:0; padding:0; box-sizing:border-box; }
-html, body { height:100%; background:var(--bg); color:var(--text); font-family:'Courier New',monospace; font-size:13px; overflow:hidden; }
+/* ===== LANDING ===== */
+#screen-landing{
+  width:100%;height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;position:relative;overflow:hidden;
+}
+#screen-landing::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 50% at 25% 40%,rgba(200,168,78,.12) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 60% at 75% 60%,rgba(74,144,217,.10) 0%,transparent 70%);
+  animation:bgPulse 18s ease-in-out infinite alternate;
+}
+@keyframes bgPulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
+.land-wrap{position:relative;z-index:1;text-align:center;max-width:640px;padding:0 24px}
+.land-logo{font-size:36px;letter-spacing:10px;color:var(--accent);font-weight:700;margin-bottom:14px;text-shadow:0 0 40px rgba(200,168,78,.3)}
+.land-sub{color:var(--text2);font-size:14px;letter-spacing:1px;margin-bottom:44px}
+.land-btn{
+  background:var(--accent);color:#0a0a0f;padding:15px 52px;border-radius:6px;
+  font-weight:700;font-size:15px;letter-spacing:1px;border:none;
+}
+.land-btn:hover{background:#dbb95e}
+.land-powered{color:var(--text2);font-size:11px;margin-top:28px;letter-spacing:.5px}
+.land-divider{width:420px;max-width:100%;height:1px;background:var(--border);margin:24px auto}
+.land-prim-label{color:var(--text2);font-size:11px;margin-bottom:10px;letter-spacing:1px}
+.land-pills{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.land-pill{
+  padding:4px 14px;border-radius:12px;font-size:10px;font-weight:600;
+  border:1px solid currentColor;opacity:.85;
+}
+.api-corner{
+  position:absolute;bottom:20px;right:20px;display:flex;gap:6px;align-items:center;z-index:2;
+}
+.api-corner input{
+  background:var(--panel);border:1px solid var(--border);
+  padding:6px 10px;border-radius:4px;font-size:11px;width:210px;
+}
+.api-corner input:focus{border-color:var(--accent)}
+.api-corner button{
+  background:var(--panel-raised);color:var(--accent);padding:6px 14px;
+  border-radius:4px;font-size:11px;border:1px solid var(--border);
+}
+.api-corner button:hover{background:var(--border)}
 
-.hidden { display:none !important; }
+/* ===== SETUP ===== */
+#screen-setup{
+  width:100%;height:100vh;display:flex;flex-direction:column;
+  align-items:center;padding:36px 20px 24px;overflow-y:auto;background:var(--bg);
+}
+.setup-hdr{width:100%;max-width:820px;display:flex;justify-content:space-between;align-items:center;margin-bottom:32px}
+.setup-logo{font-size:18px;letter-spacing:4px;color:var(--accent);font-weight:700}
+.setup-back{background:var(--panel-raised);color:var(--text2);padding:7px 16px;border-radius:4px;font-size:12px;border:1px solid var(--border)}
+.setup-section{width:100%;max-width:820px;margin-bottom:26px}
+.setup-stitle{color:var(--text2);font-size:10px;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase}
+.setup-cards{display:flex;gap:12px;flex-wrap:wrap}
+.setup-card{
+  flex:1;min-width:130px;background:var(--panel);border:2px solid var(--border);
+  border-radius:8px;padding:16px 12px;text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s;
+}
+.setup-card:hover{border-color:var(--accent-dim);background:var(--panel-raised)}
+.setup-card.selected{border-color:var(--accent);background:var(--panel-raised)}
+.setup-card-icon{font-size:26px;margin-bottom:8px}
+.setup-card-name{font-size:13px;font-weight:600}
+.setup-card-desc{font-size:10px;color:var(--text2);margin-top:4px}
+.setup-inputs{display:flex;flex-direction:column;gap:10px}
+.setup-row{display:flex;align-items:center;gap:12px}
+.setup-row label{color:var(--text2);font-size:12px;width:68px;flex-shrink:0}
+.setup-row input{
+  flex:1;background:var(--panel);border:1px solid var(--border);
+  padding:10px 14px;border-radius:6px;font-size:13px;
+}
+.setup-row input:focus{border-color:var(--accent)}
+.setup-start{
+  background:var(--accent);color:#0a0a0f;padding:14px 52px;border-radius:6px;
+  font-weight:700;font-size:15px;margin-top:24px;
+}
+.setup-start:hover{background:#dbb95e}
 
-/* Scrollbars */
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
-* { scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
-
-/* Buttons */
-button { font-family:inherit; cursor:pointer; border:none; outline:none; }
-button:disabled { opacity:0.4; cursor:not-allowed; }
-input, textarea { font-family:inherit; outline:none; }
-
-/* ========== LANDING ========== */
-#screen-landing {
-  width:100%; height:100vh; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; position:relative;
-  background:var(--bg);
-}
-#screen-landing::before {
-  content:''; position:absolute; inset:0; opacity:0.15;
-  background:radial-gradient(ellipse at 30% 40%, #c8a84e22 0%, transparent 60%),
-             radial-gradient(ellipse at 70% 60%, #4a90d922 0%, transparent 60%);
-  animation: bgShift 20s ease-in-out infinite alternate;
-}
-@keyframes bgShift {
-  0% { opacity:0.1; }
-  50% { opacity:0.2; }
-  100% { opacity:0.1; }
-}
-.landing-content { position:relative; z-index:1; text-align:center; }
-.landing-logo { font-size:32px; letter-spacing:8px; color:var(--accent); font-weight:700; margin-bottom:12px; }
-.landing-sub { color:var(--text2); font-size:14px; margin-bottom:40px; }
-.landing-btn {
-  background:var(--accent); color:#0a0a0f; padding:14px 48px; border-radius:6px;
-  font-weight:700; font-size:15px; letter-spacing:1px; transition:all 0.2s;
-}
-.landing-btn:hover { background:#dab85e; }
-.landing-powered { color:var(--text2); font-size:11px; margin-top:32px; }
-.landing-line { width:400px; height:1px; background:var(--border); margin:20px auto; }
-.landing-prims-title { color:var(--text2); font-size:11px; margin-bottom:12px; }
-.landing-pills { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:8px; }
-.landing-pill {
-  padding:4px 12px; border-radius:12px; font-size:10px; font-weight:600;
-  border:1px solid; opacity:0.85;
-}
-.api-key-corner {
-  position:absolute; bottom:20px; right:20px; display:flex; gap:6px; align-items:center; z-index:2;
-}
-.api-key-corner input {
-  background:var(--panel); border:1px solid var(--border); color:var(--text);
-  padding:6px 10px; border-radius:4px; font-size:11px; width:200px;
-}
-.api-key-corner button {
-  background:var(--panel-raised); color:var(--accent); padding:6px 14px;
-  border-radius:4px; font-size:11px; border:1px solid var(--border);
-}
-
-/* ========== SETUP ========== */
-#screen-setup {
-  width:100%; height:100vh; display:flex; flex-direction:column;
-  align-items:center; padding:40px 20px; overflow-y:auto; background:var(--bg);
-}
-.setup-header { width:100%; max-width:800px; display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; }
-.setup-logo { font-size:18px; letter-spacing:4px; color:var(--accent); font-weight:700; }
-.setup-back { background:var(--panel-raised); color:var(--text2); padding:8px 16px; border-radius:4px; font-size:12px; border:1px solid var(--border); }
-.setup-section { width:100%; max-width:800px; margin-bottom:24px; }
-.setup-section-title { color:var(--text2); font-size:11px; letter-spacing:2px; margin-bottom:12px; text-transform:uppercase; }
-.setup-cards { display:flex; gap:12px; flex-wrap:wrap; }
-.setup-card {
-  flex:1; min-width:140px; background:var(--panel); border:2px solid var(--border);
-  border-radius:8px; padding:16px; text-align:center; cursor:pointer; transition:all 0.2s;
-}
-.setup-card:hover { border-color:var(--accent-dim); }
-.setup-card.selected { border-color:var(--accent); background:var(--panel-raised); }
-.setup-card-icon { font-size:24px; margin-bottom:8px; }
-.setup-card-name { font-size:13px; font-weight:600; color:var(--text); }
-.setup-card-desc { font-size:10px; color:var(--text2); margin-top:4px; }
-.setup-inputs { display:flex; flex-direction:column; gap:10px; }
-.setup-input-row { display:flex; align-items:center; gap:10px; }
-.setup-input-row label { color:var(--text2); font-size:12px; width:70px; }
-.setup-input-row input {
-  flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text);
-  padding:10px 14px; border-radius:6px; font-size:13px;
-}
-.setup-start {
-  background:var(--accent); color:#0a0a0f; padding:14px 48px; border-radius:6px;
-  font-weight:700; font-size:15px; margin-top:24px;
-}
-
-/* ========== MEDIATION ========== */
-#screen-mediation { width:100%; height:100vh; display:flex; flex-direction:column; }
+/* ===== MEDIATION CHROME ===== */
+#screen-mediation{width:100%;height:100vh;display:flex;flex-direction:column}
 
 /* Header */
-.med-header {
-  height:44px; background:var(--panel); border-bottom:1px solid var(--border);
-  display:flex; align-items:center; padding:0 16px; gap:16px; flex-shrink:0;
+.med-hdr{
+  height:44px;background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;gap:14px;flex-shrink:0;overflow:hidden;
 }
-.med-header-logo { font-size:14px; letter-spacing:4px; color:var(--accent); font-weight:700; }
-.phase-badge { padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700; text-transform:uppercase; }
-.progress-wrap { width:180px; height:6px; background:var(--panel-raised); border-radius:3px; overflow:hidden; }
-.progress-fill { height:100%; border-radius:3px; transition:width 0.5s, background 0.5s; width:0%; background:var(--red); }
-.med-header-stats { font-size:11px; color:var(--text2); }
-.med-header-config { font-size:11px; color:var(--text2); cursor:pointer; }
-.med-header-config:hover { color:var(--accent); }
-.conn-dot { width:8px; height:8px; border-radius:50%; margin-left:auto; }
-.conn-dot.connected { background:var(--green); }
-.conn-dot.disconnected { background:var(--red); }
+.med-logo{font-size:14px;letter-spacing:4px;color:var(--accent);font-weight:700;flex-shrink:0}
+.phase-pill{padding:3px 10px;border-radius:10px;font-size:9px;font-weight:700;text-transform:uppercase;flex-shrink:0}
+.prog-wrap{width:170px;height:6px;background:var(--panel-raised);border-radius:3px;overflow:hidden;flex-shrink:0}
+.prog-fill{height:100%;border-radius:3px;width:0%;background:var(--red);transition:width .6s,background .6s}
+.hdr-stats{font-size:10px;color:var(--text2);flex-shrink:0}
+.hdr-cfg{font-size:10px;color:var(--text2);cursor:pointer;flex-shrink:0;padding:2px 6px;border-radius:3px}
+.hdr-cfg:hover{background:var(--panel-raised);color:var(--accent)}
+.conn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-left:auto}
+.conn-dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.conn-dot.off{background:var(--red)}
 
-/* Party Tabs */
-.party-bar {
-  height:40px; background:var(--panel); border-bottom:1px solid var(--border);
-  display:flex; align-items:center; padding:0 12px; gap:8px; flex-shrink:0;
+/* Party bar */
+.party-bar{
+  height:40px;background:var(--panel);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 10px;gap:6px;flex-shrink:0;
 }
-.party-tab {
-  padding:6px 16px; border-radius:4px; font-size:12px; background:transparent;
-  color:var(--text2); border:1px solid transparent; display:flex; align-items:center; gap:6px;
+.p-tab{
+  padding:5px 14px;border-radius:4px;font-size:12px;background:transparent;
+  color:var(--text2);border:2px solid transparent;display:flex;align-items:center;gap:6px;
 }
-.party-tab.active { color:var(--accent); border-bottom:2px solid var(--accent); background:var(--panel-raised); }
-.party-tab .party-score { font-size:10px; opacity:0.7; }
-.party-tab .active-badge { font-size:9px; background:var(--accent); color:#0a0a0f; padding:1px 6px; border-radius:3px; font-weight:700; }
-.party-bar-sep { width:1px; height:20px; background:var(--border); margin:0 4px; }
-.party-bar-btn {
-  padding:5px 12px; border-radius:4px; font-size:11px; background:var(--panel-raised);
-  color:var(--text2); border:1px solid var(--border);
+.p-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.p-tab .act-badge{font-size:9px;background:var(--accent);color:#0a0a0f;padding:1px 6px;border-radius:3px;font-weight:700}
+.p-tab .pscore{font-size:9px;color:var(--text2)}
+.bar-sep{width:1px;height:20px;background:var(--border);margin:0 4px;flex-shrink:0}
+.bar-btn{
+  padding:5px 12px;border-radius:4px;font-size:11px;background:var(--panel-raised);
+  color:var(--text2);border:1px solid var(--border);
 }
-.party-bar-btn:hover { border-color:var(--accent-dim); color:var(--text); }
-#resolveBtn {
-  background:linear-gradient(135deg, var(--accent), var(--accent-dim));
-  color:#0a0a0f; font-weight:700; padding:8px 24px; border-radius:20px;
-  font-size:12px; border:none; margin-left:auto;
+.bar-btn:hover{border-color:var(--accent-dim);color:var(--text)}
+#resolveBtn{
+  background:linear-gradient(135deg,var(--accent),var(--accent-dim));
+  color:#0a0a0f;font-weight:700;padding:7px 22px;border-radius:20px;
+  font-size:11px;border:none;margin-left:auto;flex-shrink:0;
 }
-#resolveBtn:disabled { opacity:0.35; }
-@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(200,168,78,0.4)} 50%{box-shadow:0 0 0 8px rgba(200,168,78,0)} }
-.ready-pulse { animation:pulse 2s ease-in-out infinite; }
+@keyframes glowPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(200,168,78,.5)}
+  50%{box-shadow:0 0 0 8px rgba(200,168,78,0)}
+}
+.ready-pulse{animation:glowPulse 2s ease-in-out infinite}
 
 /* Panels */
-.med-panels { flex:1; display:flex; overflow:hidden; }
-.panel-left { width:28%; border-right:1px solid var(--border); display:flex; flex-direction:column; }
-.panel-center { width:44%; position:relative; display:flex; flex-direction:column; }
-.panel-right { width:28%; border-left:1px solid var(--border); overflow-y:auto; padding:12px; }
+.med-panels{flex:1;display:flex;overflow:hidden;min-height:0}
+.panel-chat{width:28%;border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0}
+.panel-graph{width:44%;position:relative;background:var(--bg);overflow:hidden}
+.panel-info{width:28%;border-left:1px solid var(--border);overflow-y:auto;padding:12px}
 
-/* Chat */
-.chat-messages { flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:6px; }
-.msg { max-width:90%; padding:8px 12px; border-radius:6px; font-size:12px; line-height:1.5; word-wrap:break-word; }
-.msg-user { align-self:flex-end; background:var(--panel-raised); border-left:3px solid var(--blue); }
-.msg-user.party-b { border-left-color:var(--orange); }
-.msg-agent { align-self:flex-start; background:var(--panel); border-left:3px solid var(--accent); }
-.msg-author { font-size:9px; color:var(--text2); margin-bottom:2px; }
-.msg-system { align-self:center; font-style:italic; color:var(--text2); font-size:11px; background:none; padding:4px 0; }
-.msg-tool { align-self:center; font-size:11px; color:var(--text2); }
-.msg-tool .tool-name { color:var(--accent); }
-.typing-indicator { align-self:flex-start; padding:8px 12px; }
-.typing-indicator span { display:inline-block; width:6px; height:6px; background:var(--text2); border-radius:50%; margin:0 2px; animation:typeDot 1.4s infinite; }
-.typing-indicator span:nth-child(2) { animation-delay:0.2s; }
-.typing-indicator span:nth-child(3) { animation-delay:0.4s; }
-@keyframes typeDot { 0%,80%,100%{opacity:0.3;transform:scale(0.8)} 40%{opacity:1;transform:scale(1.1)} }
+/* Chat messages */
+.chat-msgs{flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:5px;min-height:0}
+.msg{max-width:92%;padding:7px 11px;border-radius:6px;font-size:12px;line-height:1.55;word-break:break-word}
+.msg-user{align-self:flex-end;background:var(--panel-raised);border-left:3px solid var(--blue)}
+.msg-user.pb{border-left-color:var(--orange)}
+.msg-agent{align-self:flex-start;background:var(--panel);border-left:3px solid var(--accent)}
+.msg-sys{align-self:center;color:var(--text2);font-style:italic;font-size:11px;padding:3px 0}
+.msg-tool{align-self:center;font-size:10px;color:var(--text2);padding:2px 0}
+.msg-tool .tn{color:var(--accent)}
+.msg-author{font-size:9px;color:var(--text2);margin-bottom:2px}
 
-.chat-input-area {
-  padding:8px; border-top:1px solid var(--border); display:flex; gap:6px; align-items:center;
+.typing{align-self:flex-start;padding:10px 12px;display:flex;gap:4px;align-items:center}
+.typing span{
+  display:inline-block;width:6px;height:6px;background:var(--text2);border-radius:50%;
+  animation:tdot 1.4s infinite;
 }
-#micBtn {
-  width:36px; height:36px; border-radius:50%; background:var(--panel-raised);
-  color:var(--text2); font-size:16px; border:2px solid var(--border); flex-shrink:0;
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1.1)}}
+
+/* Chat input */
+.chat-input{
+  padding:7px;border-top:1px solid var(--border);
+  display:flex;gap:5px;align-items:center;flex-shrink:0;
 }
-#micBtn.recording { border-color:var(--red); color:var(--red); animation:micPulse 1.5s infinite; }
-#micBtn.disabled-mic { opacity:0.4; }
-@keyframes micPulse { 0%,100%{box-shadow:0 0 0 0 rgba(224,80,80,0.4)} 50%{box-shadow:0 0 0 6px rgba(224,80,80,0)} }
-#chatInput {
-  flex:1; background:var(--panel); border:1px solid var(--border); color:var(--text);
-  padding:8px 12px; border-radius:6px; font-size:12px; font-family:inherit;
+#micBtn{
+  width:34px;height:34px;border-radius:50%;background:var(--panel-raised);
+  color:var(--text2);font-size:15px;border:2px solid var(--border);flex-shrink:0;
 }
-#sendBtn { background:var(--accent); color:#0a0a0f; padding:8px 16px; border-radius:6px; font-weight:700; font-size:12px; }
+#micBtn.rec{border-color:var(--red);color:var(--red);animation:micRing 1.5s infinite}
+@keyframes micRing{0%,100%{box-shadow:0 0 0 0 rgba(224,80,80,.5)}50%{box-shadow:0 0 0 6px rgba(224,80,80,0)}}
+#chatInput{
+  flex:1;background:var(--panel);border:1px solid var(--border);
+  padding:7px 11px;border-radius:5px;font-size:12px;
+}
+#chatInput:focus{border-color:var(--accent-dim)}
+#sendBtn{background:var(--accent);color:#0a0a0f;padding:7px 14px;border-radius:5px;font-weight:700;font-size:12px}
+#sendBtn:hover{background:#dbb95e}
 
 /* Graph */
-.graph-container { flex:1; position:relative; background:var(--bg); }
-.graph-container svg { width:100%; height:100%; }
-.graph-legend {
-  position:absolute; bottom:10px; right:10px; background:rgba(18,18,26,0.9);
-  border:1px solid var(--border); border-radius:6px; padding:8px 12px; font-size:10px;
+#graphSvg{width:100%;height:100%;display:block}
+.graph-wrap{position:absolute;inset:0}
+.g-legend{
+  position:absolute;bottom:8px;right:8px;background:rgba(18,18,26,.92);
+  border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:10px;
 }
-.legend-row { display:flex; align-items:center; gap:6px; margin:3px 0; }
-.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-
-/* Info Panel */
-.info-section { margin-bottom:16px; }
-.info-title { font-size:10px; letter-spacing:2px; color:var(--text2); text-transform:uppercase; margin-bottom:8px; }
-.info-case-title { font-size:16px; font-weight:700; color:var(--text); margin-bottom:4px; }
-.info-summary { font-size:11px; color:var(--text2); line-height:1.5; max-height:60px; overflow:hidden; }
-.escalation-badge { display:inline-block; padding:2px 8px; border-radius:8px; font-size:10px; font-weight:700; }
-.onto-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-.onto-box { background:var(--panel); border-radius:6px; padding:8px; display:flex; align-items:center; gap:8px; }
-.onto-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-.onto-label { font-size:10px; color:var(--text2); }
-.onto-count { font-size:18px; font-weight:700; color:var(--text); margin-left:auto; }
-.health-score { font-size:32px; font-weight:700; margin-bottom:8px; }
-.health-item { font-size:11px; margin:3px 0; }
-.health-item .check { color:var(--green); }
-.health-item .cross { color:var(--red); }
-.health-gaps { font-size:11px; color:var(--text2); line-height:1.5; margin-top:6px; }
-.party-progress { margin:4px 0; }
-.party-progress-label { font-size:11px; color:var(--text2); margin-bottom:3px; }
-.party-progress-bar { height:4px; background:var(--panel-raised); border-radius:2px; overflow:hidden; }
-.party-progress-fill { height:100%; border-radius:2px; background:var(--accent); transition:width 0.5s; }
-.theory-card { background:var(--panel); border-radius:6px; padding:8px; margin-bottom:6px; cursor:pointer; }
-.theory-card:hover { background:var(--panel-raised); }
-.theory-name { font-size:12px; font-weight:600; color:var(--text); }
-.theory-score { font-size:10px; color:var(--accent); }
-.theory-reason { font-size:10px; color:var(--text2); margin-top:2px; }
-
-/* ========== RESOLUTION ========== */
-#screen-resolution { width:100%; height:100vh; display:flex; flex-direction:column; overflow-y:auto; background:var(--bg); }
-.res-header { padding:16px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:16px; }
-.res-logo { font-size:16px; letter-spacing:4px; color:var(--accent); font-weight:700; }
-.res-badge { background:var(--green); color:#0a0a0f; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700; }
-.res-body { display:flex; flex:1; overflow:hidden; }
-.res-main { flex:1; padding:24px; overflow-y:auto; }
-.res-sidebar { width:300px; border-left:1px solid var(--border); padding:16px; overflow-y:auto; }
-.res-exec-summary { background:var(--panel); border-radius:8px; padding:16px; margin-bottom:20px; line-height:1.6; font-size:13px; }
-.res-path-card {
-  background:var(--panel); border:1px solid var(--border); border-radius:8px;
-  padding:16px; margin-bottom:12px;
-}
-.res-path-title { font-size:15px; font-weight:700; color:var(--accent); margin-bottom:8px; }
-.res-path-row { display:flex; gap:12px; margin-bottom:6px; }
-.res-path-party { flex:1; background:var(--panel-raised); border-radius:6px; padding:8px; font-size:11px; }
-.res-path-party h4 { font-size:10px; color:var(--text2); text-transform:uppercase; margin-bottom:4px; }
-.res-path-why { font-size:11px; color:var(--text2); line-height:1.5; margin:6px 0; }
-.res-path-risk { font-size:11px; color:var(--red); }
-.res-path-explore { background:var(--accent); color:#0a0a0f; padding:6px 16px; border-radius:4px; font-size:11px; font-weight:700; margin-top:8px; }
-.res-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
-.res-action-btn { padding:8px 18px; border-radius:6px; font-size:12px; background:var(--panel-raised); color:var(--text); border:1px solid var(--border); }
-.res-action-btn:hover { border-color:var(--accent); color:var(--accent); }
-.res-theory { background:var(--panel); border-radius:6px; padding:10px; margin-bottom:8px; }
-.res-theory-name { font-size:13px; font-weight:600; color:var(--accent); }
-.res-theory-school { font-size:10px; color:var(--text2); margin:2px 0; }
-.res-theory-explain { font-size:11px; color:var(--text2); line-height:1.5; margin-top:4px; }
-.res-chat { margin-top:16px; max-height:300px; overflow-y:auto; background:var(--panel); border-radius:8px; padding:10px; }
-
-/* Upload Modal */
-.modal-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100;
-  display:flex; align-items:center; justify-content:center;
-}
-.modal-box {
-  background:var(--panel); border:1px solid var(--border); border-radius:8px;
-  padding:20px; width:500px; max-width:90%;
-}
-.modal-title { font-size:14px; font-weight:700; color:var(--accent); margin-bottom:12px; }
-.modal-input { width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:4px; font-size:12px; margin-bottom:8px; }
-.modal-textarea { width:100%; height:200px; background:var(--bg); border:1px solid var(--border); color:var(--text); padding:8px 12px; border-radius:4px; font-size:12px; resize:vertical; margin-bottom:12px; }
-.modal-actions { display:flex; gap:8px; justify-content:flex-end; }
-.modal-btn { padding:8px 20px; border-radius:4px; font-size:12px; }
-.modal-btn-primary { background:var(--accent); color:#0a0a0f; font-weight:700; }
-.modal-btn-secondary { background:var(--panel-raised); color:var(--text2); border:1px solid var(--border); }
-
-/* Tooltip */
-.node-tooltip {
-  position:absolute; background:var(--panel-raised); border:1px solid var(--border);
-  border-radius:6px; padding:10px; font-size:11px; pointer-events:none;
-  z-index:50; max-width:250px; line-height:1.5; display:none;
+.g-leg-row{display:flex;align-items:center;gap:6px;margin:2px 0}
+.g-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.g-tooltip{
+  position:absolute;background:var(--panel-raised);border:1px solid var(--border);
+  border-radius:6px;padding:9px;font-size:11px;pointer-events:none;z-index:20;
+  max-width:240px;line-height:1.5;display:none;
 }
 
-/* Responsive */
-@media (max-width:1024px) {
-  .med-panels { flex-wrap:wrap; }
-  .panel-left, .panel-center { width:50%; }
-  .panel-right { width:100%; height:200px; border-left:none; border-top:1px solid var(--border); }
+/* Info panel */
+.info-sec{margin-bottom:16px}
+.info-ttl{font-size:10px;letter-spacing:2px;color:var(--text2);text-transform:uppercase;margin-bottom:8px}
+.info-case-name{font-size:15px;font-weight:700;margin-bottom:4px}
+.info-summary{font-size:11px;color:var(--text2);line-height:1.5;max-height:55px;overflow:hidden}
+.esc-pill{display:inline-block;padding:2px 9px;border-radius:8px;font-size:10px;font-weight:700;margin-top:5px}
+.onto-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.onto-box{background:var(--panel);border-radius:5px;padding:7px;display:flex;align-items:center;gap:7px}
+.onto-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.onto-lbl{font-size:10px;color:var(--text2)}
+.onto-cnt{font-size:17px;font-weight:700;margin-left:auto}
+.health-num{font-size:30px;font-weight:700;margin-bottom:6px}
+.hc-item{font-size:11px;margin:2px 0}
+.hc-ok{color:var(--green)}
+.hc-no{color:var(--red)}
+.h-gaps{font-size:11px;color:var(--text2);line-height:1.6;margin-top:5px}
+.pp-bar-wrap{margin:4px 0}
+.pp-lbl{font-size:11px;color:var(--text2);margin-bottom:2px}
+.pp-bar{height:4px;background:var(--panel-raised);border-radius:2px;overflow:hidden}
+.pp-fill{height:100%;border-radius:2px;background:var(--accent);transition:width .5s}
+.th-card{background:var(--panel);border-radius:5px;padding:8px;margin-bottom:5px;cursor:pointer;border:1px solid var(--border)}
+.th-card:hover{border-color:var(--accent-dim)}
+.th-name{font-size:12px;font-weight:600}
+.th-score{font-size:10px;color:var(--accent);margin-top:1px}
+.th-reason{font-size:10px;color:var(--text2);margin-top:2px}
+
+/* ===== RESOLUTION ===== */
+#screen-resolution{
+  width:100%;height:100vh;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);
+}
+.res-hdr{
+  padding:14px 22px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;flex-shrink:0;background:var(--panel);
+}
+.res-logo{font-size:15px;letter-spacing:4px;color:var(--accent);font-weight:700}
+.res-badge{background:var(--green);color:#0a0a0f;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700}
+.res-parties{color:var(--text2);font-size:12px;margin-left:auto}
+.res-body{flex:1;display:flex;overflow:hidden;min-height:0}
+.res-main{flex:1;padding:20px 22px;overflow-y:auto}
+.res-sidebar{width:290px;border-left:1px solid var(--border);padding:14px;overflow-y:auto;flex-shrink:0}
+.res-summary{
+  background:var(--panel);border-radius:8px;padding:14px;margin-bottom:18px;
+  font-size:13px;line-height:1.65;color:var(--text);
+}
+.res-path{
+  background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:14px;margin-bottom:12px;
+}
+.res-path-title{font-size:15px;font-weight:700;color:var(--accent);margin-bottom:10px}
+.res-path-row{display:flex;gap:10px;margin-bottom:8px}
+.res-party-box{flex:1;background:var(--panel-raised);border-radius:5px;padding:8px;font-size:11px}
+.res-party-box h4{font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px}
+.res-why{font-size:11px;color:var(--text2);line-height:1.55;margin:6px 0}
+.res-risk{font-size:11px;color:var(--red);margin:4px 0}
+.res-explore{background:var(--accent);color:#0a0a0f;padding:5px 14px;border-radius:4px;font-size:11px;font-weight:700;margin-top:8px}
+.res-explore:hover{background:#dbb95e}
+.res-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.res-act-btn{
+  padding:8px 16px;border-radius:5px;font-size:12px;
+  background:var(--panel-raised);color:var(--text);border:1px solid var(--border);
+}
+.res-act-btn:hover{border-color:var(--accent);color:var(--accent)}
+.res-chat-wrap{margin-top:18px}
+.res-chat{
+  background:var(--panel);border-radius:7px;padding:10px;
+  max-height:260px;overflow-y:auto;margin-bottom:8px;
+}
+.res-input-row{display:flex;gap:6px}
+.res-input{
+  flex:1;background:var(--panel);border:1px solid var(--border);
+  padding:7px 11px;border-radius:5px;font-size:12px;
+}
+.res-input:focus{border-color:var(--accent-dim)}
+.res-send{background:var(--accent);color:#0a0a0f;padding:7px 14px;border-radius:5px;font-weight:700;font-size:12px}
+.res-th{background:var(--panel);border-radius:5px;padding:9px;margin-bottom:7px}
+.res-th-name{font-size:13px;font-weight:600;color:var(--accent)}
+.res-th-school{font-size:10px;color:var(--text2);margin:2px 0}
+.res-th-explain{font-size:11px;color:var(--text2);line-height:1.5;margin-top:4px}
+.res-health-score{font-size:28px;font-weight:700;margin-bottom:8px}
+
+/* ===== MODAL ===== */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;
+  display:flex;align-items:center;justify-content:center;
+}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px;width:500px;max-width:92%}
+.modal-title{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:12px}
+.modal-inp{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  padding:8px 12px;border-radius:4px;font-size:12px;margin-bottom:8px;
+}
+.modal-ta{
+  width:100%;height:200px;background:var(--bg);border:1px solid var(--border);
+  padding:8px 12px;border-radius:4px;font-size:12px;resize:vertical;margin-bottom:12px;
+}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.modal-btn-p{background:var(--accent);color:#0a0a0f;padding:8px 20px;border-radius:4px;font-size:12px;font-weight:700}
+.modal-btn-s{background:var(--panel-raised);color:var(--text2);padding:8px 16px;border-radius:4px;font-size:12px;border:1px solid var(--border)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1100px){
+  .panel-chat{width:35%}
+  .panel-graph{width:65%}
+  .panel-info{display:none}
+}
+@media(max-width:720px){
+  .panel-chat,.panel-graph{width:100%}
+  .med-panels{flex-direction:column}
 }
 </style>
 </head>
 <body>
 
-<!-- ========== SCREEN: LANDING ========== -->
+<!-- ===================== LANDING ===================== -->
 <div id="screen-landing">
-  <div class="landing-content">
-    <div class="landing-logo">C O N C O R D I A</div>
-    <div class="landing-sub">Live AI Mediation · Conflict Made Visible</div>
-    <button class="landing-btn" onclick="tryBeginMediation()">Begin Mediation →</button>
-    <div class="landing-powered">Powered by Google Gemini · ADK · Cloud Run</div>
-    <div class="landing-line"></div>
-    <div class="landing-prims-title">8 conflict primitives from UN mediation practice</div>
-    <div class="landing-pills" id="landingPills"></div>
+  <div class="land-wrap">
+    <div class="land-logo">C O N C O R D I A</div>
+    <div class="land-sub">Live AI Mediation · Conflict Made Visible</div>
+    <button class="land-btn" onclick="beginMediation()">Begin Mediation →</button>
+    <div class="land-powered">Powered by Google Gemini · ADK · Cloud Run</div>
+    <div class="land-divider"></div>
+    <div class="land-prim-label">8 CONFLICT PRIMITIVES FROM UN MEDIATION PRACTICE</div>
+    <div class="land-pills" id="landPills"></div>
   </div>
-  <div class="api-key-corner">
+  <div class="api-corner">
     <input type="password" id="apiKeyInput" placeholder="Gemini API Key (optional)">
-    <button onclick="saveApiKey()">Save</button>
+    <button onclick="saveApiKey()">Save Key</button>
   </div>
 </div>
 
-<!-- ========== SCREEN: SETUP ========== -->
+<!-- ===================== SETUP ===================== -->
 <div id="screen-setup" class="hidden">
-  <div class="setup-header">
-    <div class="setup-logo">CONCORDIA</div>
-    <button class="setup-back" onclick="showScreen('landing')">← Back</button>
+  <div class="setup-hdr">
+    <span class="setup-logo">CONCORDIA</span>
+    <button class="setup-back" onclick="goTo('landing')">← Back</button>
   </div>
   <div class="setup-section">
-    <div class="setup-section-title">Case Type</div>
-    <div class="setup-cards" id="caseTypeCards"></div>
+    <div class="setup-stitle">Case Type</div>
+    <div class="setup-cards" id="caseCards"></div>
   </div>
   <div class="setup-section">
-    <div class="setup-section-title">Mediator Style</div>
+    <div class="setup-stitle">Mediator Style</div>
     <div class="setup-cards" id="styleCards"></div>
   </div>
   <div class="setup-section">
-    <div class="setup-section-title">Parties</div>
+    <div class="setup-stitle">Party Names</div>
     <div class="setup-inputs">
-      <div class="setup-input-row">
-        <label>Party 1:</label>
-        <input type="text" id="partyAInput" placeholder="e.g. Maria Chen">
+      <div class="setup-row">
+        <label>Party 1</label>
+        <input id="inpA" type="text" placeholder="e.g. Maria Chen" maxlength="40">
       </div>
-      <div class="setup-input-row">
-        <label>Party 2:</label>
-        <input type="text" id="partyBInput" placeholder="e.g. James Rodriguez">
+      <div class="setup-row">
+        <label>Party 2</label>
+        <input id="inpB" type="text" placeholder="e.g. James Rodriguez" maxlength="40">
       </div>
     </div>
   </div>
   <button class="setup-start" onclick="startMediation()">Start Mediation →</button>
 </div>
 
-<!-- ========== SCREEN: MEDIATION ========== -->
+<!-- ===================== MEDIATION ===================== -->
 <div id="screen-mediation" class="hidden">
-  <!-- Header -->
-  <div class="med-header">
-    <div class="med-header-logo">CONCORDIA</div>
-    <span class="phase-badge" id="phaseBadge" style="background:var(--blue);color:#fff;">ARRIVE</span>
-    <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
-    <span class="med-header-stats" id="headerStats">0 nodes · 0 edges</span>
-    <span class="med-header-config" id="headerConfig" onclick="toggleMiniConfig()"></span>
-    <div class="conn-dot disconnected" id="connDot"></div>
+  <!-- Top header -->
+  <div class="med-hdr">
+    <span class="med-logo">CONCORDIA</span>
+    <span class="phase-pill" id="phasePill" style="background:var(--blue);color:#fff">ARRIVE</span>
+    <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+    <span class="hdr-stats" id="hdrStats">0 nodes · 0 edges</span>
+    <span class="hdr-cfg" id="hdrCfg" onclick="cycleStyle()" title="Click to cycle mediator style"></span>
+    <div class="conn-dot off" id="connDot"></div>
   </div>
-  <!-- Party tabs -->
+  <!-- Party tabs + controls -->
   <div class="party-bar">
-    <button class="party-tab active" id="tabPartyA" onclick="switchParty('party_a')">
-      <span>👤</span> <span id="tabAName">Party 1</span> <span class="party-score" id="tabAScore"></span> <span class="active-badge" id="tabABadge">ACTIVE</span>
+    <button class="p-tab active" id="tabA" onclick="switchParty('party_a')">
+      <span>👤</span>
+      <span id="tabAName">Party 1</span>
+      <span class="pscore" id="tabAScore"></span>
+      <span class="act-badge" id="tabABadge">ACTIVE</span>
     </button>
-    <button class="party-tab" id="tabPartyB" onclick="switchParty('party_b')" disabled>
-      <span>👤</span> <span id="tabBName">Party 2</span> <span class="party-score" id="tabBScore"></span> <span class="active-badge hidden" id="tabBBadge">ACTIVE</span>
+    <button class="p-tab" id="tabB" onclick="switchParty('party_b')" disabled>
+      <span>👤</span>
+      <span id="tabBName">Party 2</span>
+      <span class="pscore" id="tabBScore"></span>
+      <span class="act-badge hidden" id="tabBBadge">ACTIVE</span>
     </button>
-    <div class="party-bar-sep"></div>
-    <button class="party-bar-btn" onclick="showUploadModal()">📄 Upload</button>
-    <button class="party-bar-btn" onclick="resetMediation()">↺ Reset</button>
+    <div class="bar-sep"></div>
+    <button class="bar-btn" onclick="showUpload()">📄 Upload</button>
+    <button class="bar-btn" onclick="doReset()">↺ Reset</button>
     <button id="resolveBtn" disabled onclick="triggerResolution()">🔍 Find Common Ground</button>
   </div>
-  <!-- Panels -->
+  <!-- Three panels -->
   <div class="med-panels">
     <!-- Left: Chat -->
-    <div class="panel-left">
-      <div class="chat-messages" id="chatMessages"></div>
-      <div class="typing-indicator hidden" id="typingIndicator"><span></span><span></span><span></span></div>
-      <div class="chat-input-area">
-        <button id="micBtn" onclick="toggleMic()">🎤</button>
-        <input type="text" id="chatInput" placeholder="Tell me what's going on..." onkeydown="if(event.key==='Enter')sendMessage()">
-        <button id="sendBtn" onclick="sendMessage()">Send</button>
+    <div class="panel-chat">
+      <div class="chat-msgs" id="chatMsgs"></div>
+      <div class="typing hidden" id="typing"><span></span><span></span><span></span></div>
+      <div class="chat-input">
+        <button id="micBtn" onclick="toggleMic()" title="Toggle microphone">🎤</button>
+        <input type="text" id="chatInput" placeholder="Tell me what's going on..."
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}">
+        <button id="sendBtn" onclick="sendMsg()">Send</button>
       </div>
     </div>
-    <!-- Center: Graph -->
-    <div class="panel-center">
-      <div class="graph-container" id="graphContainer">
+    <!-- Center: D3 Graph -->
+    <div class="panel-graph" id="graphPanel">
+      <div class="graph-wrap">
         <svg id="graphSvg"></svg>
-        <div class="node-tooltip" id="nodeTooltip"></div>
-        <div class="graph-legend" id="graphLegend"></div>
+        <div class="g-tooltip" id="gTip"></div>
       </div>
+      <div class="g-legend" id="gLegend"></div>
     </div>
     <!-- Right: Intelligence -->
-    <div class="panel-right" id="infoPanel">
-      <div class="info-section">
-        <div class="info-title">Case Info</div>
-        <div class="info-case-title" id="infoCaseTitle" style="font-style:italic;">Untitled Case</div>
-        <div class="info-summary" id="infoCaseSummary"></div>
-        <div id="infoEscalation"></div>
+    <div class="panel-info">
+      <!-- Case Info -->
+      <div class="info-sec">
+        <div class="info-ttl">Case Info</div>
+        <div class="info-case-name" id="caseName" style="font-style:italic;color:var(--text2)">Untitled Case</div>
+        <div class="info-summary" id="caseSummary"></div>
+        <div id="caseEsc"></div>
       </div>
-      <div class="info-section">
-        <div class="info-title">Ontology Counts</div>
+      <!-- Ontology Grid -->
+      <div class="info-sec">
+        <div class="info-ttl">Ontology Counts</div>
         <div class="onto-grid" id="ontoGrid"></div>
       </div>
-      <div class="info-section">
-        <div class="info-title">Health Check</div>
-        <div class="health-score" id="healthScore" style="color:var(--red);">0%</div>
+      <!-- Health -->
+      <div class="info-sec">
+        <div class="info-ttl">Health Check</div>
+        <div class="health-num" id="healthNum" style="color:var(--red)">0%</div>
         <div id="healthChecks"></div>
-        <div class="health-gaps" id="healthGaps"></div>
+        <div class="h-gaps" id="healthGaps"></div>
       </div>
-      <div class="info-section">
-        <div class="info-title">Per-Party Progress</div>
-        <div id="partyProgress"></div>
+      <!-- Per-party -->
+      <div class="info-sec">
+        <div class="info-ttl">Per-Party Progress</div>
+        <div id="partyProg"></div>
       </div>
-      <div class="info-section">
-        <div class="info-title">Active Theories</div>
-        <div id="theoriesPanel"></div>
-      </div>
-      <div class="info-section hidden" id="commonGroundPreview">
-        <div class="info-title">Common Ground Preview</div>
-        <div id="commonGroundContent"></div>
+      <!-- Theories -->
+      <div class="info-sec">
+        <div class="info-ttl">Active Theories</div>
+        <div id="theoriesDiv"><span style="color:var(--text2);font-size:11px">No theories yet</span></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ========== SCREEN: RESOLUTION ========== -->
+<!-- ===================== RESOLUTION ===================== -->
 <div id="screen-resolution" class="hidden">
-  <div class="res-header">
-    <div class="res-logo">CONCORDIA</div>
+  <div class="res-hdr">
+    <span class="res-logo">CONCORDIA</span>
     <span class="res-badge">RESOLUTION</span>
-    <span style="color:var(--text2);font-size:12px;margin-left:auto;" id="resParties"></span>
+    <span class="res-parties" id="resParties"></span>
   </div>
   <div class="res-body">
     <div class="res-main">
-      <div class="info-title" style="margin-bottom:8px;">Executive Summary</div>
-      <div class="res-exec-summary" id="resExecSummary">Analyzing mediation data...</div>
-      <div class="info-title" style="margin-bottom:8px;">Resolution Paths</div>
-      <div id="resPaths"></div>
-      <div class="res-actions">
-        <button class="res-action-btn" onclick="resAction('style')">🔄 Try Different Style</button>
-        <button class="res-action-btn" onclick="resAction('clarify')">📋 Ask Clarifying Questions</button>
-        <button class="res-action-btn" onclick="resAction('ideas')">💡 Generate More Ideas</button>
-        <button class="res-action-btn" onclick="resAction('export')">📄 Export Summary</button>
+      <div class="info-ttl" style="margin-bottom:8px">Executive Summary</div>
+      <div class="res-summary" id="resSummary">Analyzing conflict structure and generating resolution paths...</div>
+      <div class="info-ttl" style="margin-bottom:8px">Resolution Paths</div>
+      <div id="resPaths">
+        <div style="color:var(--text2);font-size:12px;font-style:italic">
+          Waiting for AI analysis... Continue chatting below.
+        </div>
       </div>
-      <div class="info-title" style="margin-top:20px;margin-bottom:8px;">Conversation</div>
-      <div class="res-chat" id="resChat"></div>
-      <div class="chat-input-area" style="margin-top:8px;">
-        <input type="text" id="resChatInput" style="flex:1;background:var(--panel);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:12px;" placeholder="Ask about the resolution..." onkeydown="if(event.key==='Enter')sendResMessage()">
-        <button id="resSendBtn" onclick="sendResMessage()" style="background:var(--accent);color:#0a0a0f;padding:8px 16px;border-radius:6px;font-weight:700;font-size:12px;">Send</button>
+      <div class="res-actions">
+        <button class="res-act-btn" onclick="resAction('style')">🔄 Try Different Style</button>
+        <button class="res-act-btn" onclick="resAction('clarify')">📋 Ask Clarifying Questions</button>
+        <button class="res-act-btn" onclick="resAction('ideas')">💡 Generate More Ideas</button>
+        <button class="res-act-btn" onclick="resAction('export')">📄 Export Summary</button>
+      </div>
+      <div class="res-chat-wrap">
+        <div class="info-ttl" style="margin-bottom:8px">Conversation</div>
+        <div class="res-chat" id="resChat"></div>
+        <div class="res-input-row">
+          <input type="text" class="res-input" id="resInput"
+            placeholder="Ask about the resolution..."
+            onkeydown="if(event.key==='Enter')sendResMsg()">
+          <button class="res-send" onclick="sendResMsg()">Send</button>
+        </div>
       </div>
     </div>
     <div class="res-sidebar">
-      <div class="info-title">Applied Theories</div>
-      <div id="resTheories"></div>
-      <div class="info-title" style="margin-top:16px;">Health Summary</div>
-      <div id="resHealth"></div>
+      <div class="info-ttl">Applied Theories</div>
+      <div id="resTheories"><span style="color:var(--text2);font-size:11px">Loading...</span></div>
+      <div class="info-ttl" style="margin-top:16px">Health Summary</div>
+      <div id="resHealthDiv"></div>
     </div>
   </div>
 </div>
 
-<!-- ========== UPLOAD MODAL ========== -->
-<div class="modal-overlay hidden" id="uploadModal">
-  <div class="modal-box">
+<!-- ===================== UPLOAD MODAL ===================== -->
+<div class="modal-bg hidden" id="uploadModal">
+  <div class="modal">
     <div class="modal-title">📄 Upload Document</div>
-    <input class="modal-input" id="uploadDocName" placeholder="Document name...">
-    <textarea class="modal-textarea" id="uploadDocContent" placeholder="Paste document content here..."></textarea>
-    <div class="modal-actions">
-      <button class="modal-btn modal-btn-secondary" onclick="closeUploadModal()">Cancel</button>
-      <button class="modal-btn modal-btn-primary" onclick="submitUpload()">Ingest</button>
+    <input class="modal-inp" id="upName" placeholder="Document name...">
+    <textarea class="modal-ta" id="upContent" placeholder="Paste document content here..."></textarea>
+    <div class="modal-btns">
+      <button class="modal-btn-s" onclick="closeUpload()">Cancel</button>
+      <button class="modal-btn-p" onclick="submitUpload()">Ingest Document</button>
     </div>
   </div>
 </div>
 
 <script>
-// ==================== STATE ====================
+'use strict';
+// =====================================================================
+// STATE
+// =====================================================================
 let ws = null;
 let currentParty = null;
-let config = { caseType: 'workplace', mediatorStyle: 'empathetic', partyAName: '', partyBName: '' };
+let config = { caseType: 'workplace', mediatorStyle: 'empathetic', partyAName: 'Party 1', partyBName: 'Party 2' };
 let sessions = {};
-let currentGraph = {};
-let currentHealth = {};
+let graphData = {};
+let healthData = {};
 let currentScreen = 'landing';
+let partyASpoke = false;
 let isRecording = false;
-let isResponding = false;
-let currentAgentBubble = null;
-let nodePositions = {};
-let simulation = null;
-let partyAHasMessage = false;
-let audioCtx, micStream, processor;
-let playCtx, audioQueue = [], playing = false;
-let toolNotifCount = 0;
-const MAX_TOOL_NOTIFS = 15;
+let micCtx = null, micStream = null, micProcessor = null;
+let playCtx = null, audioQueue = [], audioPlaying = false;
+let agentBubble = null;
 let silenceTimer = null;
-let resolutionMessages = [];
+let nodePositions = {};
+let sim = null;
+let toolCount = 0;
+const MAX_TOOLS = 15;
 
-const NODE_COLORS = {
-  actor: '#4a90d9', claim: '#e05050', interest: '#50c878', constraint: '#d98a4a',
-  leverage: '#9b59b6', commitment: '#c8a84e', event: '#e07830', narrative: '#2ecc71'
-};
-const PRIMITIVES = [
-  { name: 'Actor', color: NODE_COLORS.actor },
-  { name: 'Claim', color: NODE_COLORS.claim },
-  { name: 'Interest', color: NODE_COLORS.interest },
-  { name: 'Constraint', color: NODE_COLORS.constraint },
-  { name: 'Leverage', color: NODE_COLORS.leverage },
-  { name: 'Commitment', color: NODE_COLORS.commitment },
-  { name: 'Event', color: NODE_COLORS.event },
-  { name: 'Narrative', color: NODE_COLORS.narrative },
+const PRIMS = [
+  { name: 'Actor',      color: '#4a90d9' },
+  { name: 'Claim',      color: '#e05050' },
+  { name: 'Interest',   color: '#50c878' },
+  { name: 'Constraint', color: '#d98a4a' },
+  { name: 'Leverage',   color: '#9b59b6' },
+  { name: 'Commitment', color: '#c8a84e' },
+  { name: 'Event',      color: '#e07830' },
+  { name: 'Narrative',  color: '#2ecc71' },
+];
+const NODE_CLR = Object.fromEntries(PRIMS.map(p => [p.name.toLowerCase(), p.color]));
+
+const CASE_TYPES = [
+  { id:'workplace',    name:'Workplace',    icon:'🏢' },
+  { id:'family',       name:'Family',       icon:'👨‍👩‍👧‍👦' },
+  { id:'commercial',   name:'Commercial',   icon:'💼' },
+  { id:'community',    name:'Community',    icon:'🏘️' },
+  { id:'geopolitical', name:'Geopolitical', icon:'🌍' },
+];
+const STYLES = [
+  { id:'empathetic', name:'Empathetic', icon:'💛', desc:'Warm, relationship focused' },
+  { id:'analytical', name:'Analytical', icon:'🔍', desc:'Precise, structured' },
+  { id:'directive',  name:'Directive',  icon:'⚡', desc:'Assertive, efficient' },
 ];
 
-const DEFAULT_CASE_TYPES = [
-  { id: 'workplace', name: 'Workplace', icon: '🏢' },
-  { id: 'family', name: 'Family', icon: '👨‍👩‍👧‍👦' },
-  { id: 'commercial', name: 'Commercial', icon: '💼' },
-  { id: 'community', name: 'Community', icon: '🏘️' },
-  { id: 'geopolitical', name: 'Geopolitical', icon: '🌍' },
-];
-const DEFAULT_STYLES = [
-  { id: 'empathetic', name: 'Empathetic', icon: '💛', desc: 'Warm, relationship focused' },
-  { id: 'analytical', name: 'Analytical', icon: '🔍', desc: 'Precise, structured' },
-  { id: 'directive', name: 'Directive', icon: '⚡', desc: 'Assertive, efficient' },
-];
-
-// ==================== INIT ====================
-(function init() {
-  renderLandingPills();
-  renderSetupCards();
-  renderGraphLegend();
-  renderOntoGrid();
-})();
-
-function renderLandingPills() {
-  const c = document.getElementById('landingPills');
-  c.innerHTML = PRIMITIVES.map(p =>
-    `<span class="landing-pill" style="color:${p.color};border-color:${p.color}40">${p.name}</span>`
+// =====================================================================
+// BOOT
+// =====================================================================
+(function boot() {
+  // Landing pills
+  document.getElementById('landPills').innerHTML = PRIMS.map(p =>
+    `<span class="land-pill" style="color:${p.color};border-color:${p.color}">${p.name}</span>`
   ).join('');
-}
-
-function renderSetupCards() {
-  const ctc = document.getElementById('caseTypeCards');
-  ctc.innerHTML = DEFAULT_CASE_TYPES.map(t =>
-    `<div class="setup-card ${t.id===config.caseType?'selected':''}" data-ct="${t.id}" onclick="selectCaseType('${t.id}')">
-      <div class="setup-card-icon">${t.icon}</div>
-      <div class="setup-card-name">${t.name}</div>
-    </div>`
+  // Setup cards
+  renderCaseCards(CASE_TYPES);
+  renderStyleCards(STYLES);
+  // Graph legend
+  document.getElementById('gLegend').innerHTML = PRIMS.map(p =>
+    `<div class="g-leg-row"><div class="g-dot" style="background:${p.color}"></div>${p.name}</div>`
   ).join('');
-  const sc = document.getElementById('styleCards');
-  sc.innerHTML = DEFAULT_STYLES.map(s =>
-    `<div class="setup-card ${s.id===config.mediatorStyle?'selected':''}" data-st="${s.id}" onclick="selectStyle('${s.id}')">
-      <div class="setup-card-icon">${s.icon}</div>
-      <div class="setup-card-name">${s.name}</div>
-      <div class="setup-card-desc">${s.desc}</div>
-    </div>`
-  ).join('');
-}
-
-function selectCaseType(id) {
-  config.caseType = id;
-  document.querySelectorAll('#caseTypeCards .setup-card').forEach(c =>
-    c.classList.toggle('selected', c.dataset.ct === id));
-}
-
-function selectStyle(id) {
-  config.mediatorStyle = id;
-  document.querySelectorAll('#styleCards .setup-card').forEach(c =>
-    c.classList.toggle('selected', c.dataset.st === id));
-}
-
-function renderGraphLegend() {
-  document.getElementById('graphLegend').innerHTML = PRIMITIVES.map(p =>
-    `<div class="legend-row"><div class="legend-dot" style="background:${p.color}"></div>${p.name}</div>`
-  ).join('');
-}
-
-function renderOntoGrid() {
-  document.getElementById('ontoGrid').innerHTML = PRIMITIVES.map(p =>
+  // Onto grid
+  document.getElementById('ontoGrid').innerHTML = PRIMS.map(p =>
     `<div class="onto-box">
       <div class="onto-dot" style="background:${p.color}"></div>
-      <span class="onto-label">${p.name}s</span>
-      <span class="onto-count" id="onto-${p.name.toLowerCase()}">0</span>
+      <span class="onto-lbl">${p.name}s</span>
+      <span class="onto-cnt" id="oc-${p.name.toLowerCase()}">0</span>
     </div>`
   ).join('');
-}
+})();
 
-// ==================== SCREENS ====================
-function showScreen(name) {
+// =====================================================================
+// SCREEN NAV
+// =====================================================================
+function goTo(name) {
   ['landing','setup','mediation','resolution'].forEach(s =>
-    document.getElementById('screen-' + s).classList.toggle('hidden', s !== name));
+    document.getElementById('screen-'+s).classList.toggle('hidden', s !== name)
+  );
   currentScreen = name;
-  if (name === 'mediation') { initGraph(); refreshGraph(); }
+  if (name === 'mediation') { initGraph(); loadGraph(); }
 }
 
-// ==================== LANDING ====================
-async function tryBeginMediation() {
+// =====================================================================
+// LANDING
+// =====================================================================
+async function beginMediation() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (key) await saveApiKeyToServer(key);
   try {
     const r = await fetch('/api/health');
-    if (r.ok) { showScreen('setup'); fetchSetupData(); return; }
-  } catch(e) {}
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) { document.getElementById('apiKeyInput').focus(); document.getElementById('apiKeyInput').style.borderColor = 'var(--red)'; return; }
-  await saveApiKey();
-  showScreen('setup');
-  fetchSetupData();
+    const d = await r.json();
+    if (!d.api_key_set) {
+      if (!key) {
+        const k = prompt('Enter your Gemini API key to continue:');
+        if (k) await saveApiKeyToServer(k);
+      }
+    }
+  } catch (e) {}
+  goTo('setup');
+  loadSetupData();
 }
 
 async function saveApiKey() {
   const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) return;
-  try { await fetch('/api/configure', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({api_key:key}) }); } catch(e) {}
+  if (key) await saveApiKeyToServer(key);
 }
 
-async function fetchSetupData() {
+async function saveApiKeyToServer(key) {
   try {
-    const [ctRes, stRes] = await Promise.all([fetch('/api/case-types'), fetch('/api/styles')]);
-    if (ctRes.ok) { const d = await ctRes.json(); if (d.length) renderFetchedCaseTypes(d); }
-    if (stRes.ok) { const d = await stRes.json(); if (d.length) renderFetchedStyles(d); }
+    await fetch('/api/configure', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ api_key: key }),
+    });
   } catch(e) {}
 }
 
-function renderFetchedCaseTypes(types) {
-  const ctc = document.getElementById('caseTypeCards');
-  ctc.innerHTML = types.map(t =>
-    `<div class="setup-card ${t.id===config.caseType?'selected':''}" data-ct="${t.id}" onclick="selectCaseType('${t.id}')">
+async function loadSetupData() {
+  try {
+    const [cr, sr] = await Promise.all([fetch('/api/case-types'), fetch('/api/styles')]);
+    if (cr.ok) renderCaseCards(await cr.json());
+    if (sr.ok) renderStyleCards(await sr.json());
+  } catch(e) {}
+}
+
+// =====================================================================
+// SETUP
+// =====================================================================
+function renderCaseCards(types) {
+  document.getElementById('caseCards').innerHTML = types.map(t =>
+    `<div class="setup-card${t.id===config.caseType?' selected':''}" onclick="pickCase('${t.id}')">
       <div class="setup-card-icon">${t.icon||'📋'}</div>
-      <div class="setup-card-name">${t.name||t.id}</div>
+      <div class="setup-card-name">${t.name}</div>
+      ${t.description ? `<div class="setup-card-desc">${t.description}</div>` : ''}
     </div>`
   ).join('');
 }
 
-function renderFetchedStyles(styles) {
-  const sc = document.getElementById('styleCards');
-  sc.innerHTML = styles.map(s =>
-    `<div class="setup-card ${s.id===config.mediatorStyle?'selected':''}" data-st="${s.id}" onclick="selectStyle('${s.id}')">
+function renderStyleCards(styles) {
+  document.getElementById('styleCards').innerHTML = styles.map(s =>
+    `<div class="setup-card${s.id===config.mediatorStyle?' selected':''}" onclick="pickStyle('${s.id}')">
       <div class="setup-card-icon">${s.icon||'🤝'}</div>
-      <div class="setup-card-name">${s.name||s.id}</div>
+      <div class="setup-card-name">${s.name}</div>
       <div class="setup-card-desc">${s.description||s.desc||''}</div>
     </div>`
   ).join('');
 }
 
-// ==================== SETUP → MEDIATION ====================
+function pickCase(id) {
+  config.caseType = id;
+  document.querySelectorAll('#caseCards .setup-card').forEach((el, i) =>
+    el.classList.toggle('selected', CASE_TYPES[i]?.id === id || el.textContent.includes(id)));
+  renderCaseCards(Array.from(document.querySelectorAll('#caseCards .setup-card')).map((el, i) =>
+    CASE_TYPES[i] || { id, name: id, icon: '📋' }));
+  // Re-render cleanly
+  fetch('/api/case-types').then(r => r.json()).then(renderCaseCards).catch(() => {
+    const types = CASE_TYPES;
+    document.querySelectorAll('#caseCards .setup-card').forEach(el => {
+      const tid = el.onclick?.toString().match(/'(\w+)'/)?.[1];
+      el.classList.toggle('selected', tid === id);
+    });
+  });
+}
+
+function pickStyle(id) {
+  config.mediatorStyle = id;
+  document.querySelectorAll('#styleCards .setup-card').forEach(el => {
+    const tid = el.getAttribute('onclick')?.match(/'(\w+)'/)?.[1];
+    el.classList.toggle('selected', tid === id);
+  });
+}
+
 async function startMediation() {
-  config.partyAName = document.getElementById('partyAInput').value.trim() || 'Party 1';
-  config.partyBName = document.getElementById('partyBInput').value.trim() || 'Party 2';
+  config.partyAName = document.getElementById('inpA').value.trim() || 'Party 1';
+  config.partyBName = document.getElementById('inpB').value.trim() || 'Party 2';
+  // Update tab labels
   document.getElementById('tabAName').textContent = config.partyAName;
   document.getElementById('tabBName').textContent = config.partyBName;
-  const styleObj = DEFAULT_STYLES.find(s => s.id === config.mediatorStyle);
-  document.getElementById('headerConfig').textContent =
-    `${styleObj ? styleObj.icon : '🤝'}${config.mediatorStyle} / ${config.caseType}`;
+  updateHdrCfg();
   try {
     await fetch('/api/configure', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ style: config.mediatorStyle, case_type: config.caseType })
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ style: config.mediatorStyle, case_type: config.caseType }),
     });
   } catch(e) {}
-  showScreen('mediation');
+  goTo('mediation');
   switchParty('party_a');
 }
 
-// ==================== PARTY SWITCHING ====================
-function switchParty(partyId) {
-  if (partyId === 'party_b' && !partyAHasMessage) return;
-  currentParty = partyId;
-  const isA = partyId === 'party_a';
-  document.getElementById('tabPartyA').classList.toggle('active', isA);
-  document.getElementById('tabPartyB').classList.toggle('active', !isA);
+function updateHdrCfg() {
+  const s = STYLES.find(x => x.id === config.mediatorStyle);
+  document.getElementById('hdrCfg').textContent =
+    `${s ? s.icon : '🤝'} ${config.mediatorStyle} / ${config.caseType}`;
+}
+
+// =====================================================================
+// PARTY SWITCHING
+// =====================================================================
+function switchParty(pid) {
+  if (pid === 'party_b' && !partyASpoke) return;
+  currentParty = pid;
+  const isA = pid === 'party_a';
+  document.getElementById('tabA').classList.toggle('active', isA);
+  document.getElementById('tabB').classList.toggle('active', !isA);
   document.getElementById('tabABadge').classList.toggle('hidden', !isA);
   document.getElementById('tabBBadge').classList.toggle('hidden', isA);
-  addSystemMessage(`— ${isA ? config.partyAName : config.partyBName}'s Session —`);
-  connect(partyId);
+  addSysMsg(`— ${isA ? config.partyAName : config.partyBName}'s Session —`);
+  connect(pid);
 }
 
-// ==================== WEBSOCKET ====================
-function connect(partyId) {
-  const sid = sessions[partyId] || `s_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-  sessions[partyId] = sid;
-  if (ws) { ws.onclose = null; ws.close(); ws = null; }
+// =====================================================================
+// WEBSOCKET
+// =====================================================================
+function connect(pid) {
+  if (ws) { ws.onclose = null; try { ws.close(); } catch(e){} ws = null; }
+  agentBubble = null;
+  const sid = sessions[pid] || ('s_' + Date.now() + '_' + Math.random().toString(36).slice(2,7));
+  sessions[pid] = sid;
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}/ws/${partyId}/${sid}`);
+  ws = new WebSocket(`${proto}//${location.host}/ws/${pid}/${sid}`);
   ws.binaryType = 'arraybuffer';
-  ws.onopen = () => updateStatus('connected');
-  ws.onmessage = (evt) => {
-    if (evt.data instanceof ArrayBuffer) { queueAudio(evt.data); return; }
-    try { handleMsg(JSON.parse(evt.data)); } catch(e) { console.error('WS parse error', e); }
+  ws.onopen = () => setConn(true);
+  ws.onerror = () => setConn(false);
+  ws.onmessage = evt => {
+    if (evt.data instanceof ArrayBuffer) { enqueueAudio(evt.data); return; }
+    try { handleMsg(JSON.parse(evt.data)); } catch(e) { console.warn('WS parse', e); }
   };
   ws.onclose = () => {
-    updateStatus('disconnected');
+    setConn(false);
     setTimeout(() => {
-      if (currentParty === partyId && (!ws || ws.readyState !== WebSocket.OPEN)) connect(partyId);
-    }, 2000);
+      if (currentParty === pid && (!ws || ws.readyState > 1)) connect(pid);
+    }, 2500);
   };
-  ws.onerror = () => {};
 }
 
-function updateStatus(state) {
-  const dot = document.getElementById('connDot');
-  dot.classList.toggle('connected', state === 'connected');
-  dot.classList.toggle('disconnected', state !== 'connected');
+function setConn(up) {
+  const d = document.getElementById('connDot');
+  d.className = 'conn-dot ' + (up ? 'on' : 'off');
 }
 
 function handleMsg(msg) {
   switch (msg.type) {
     case 'text':
-      resetSilenceTimer();
+      clearSilence();
       appendAgentText(msg.content, msg.author);
+      setSilence();
       break;
     case 'tool_call':
-      addToolNotif(msg.tool, msg.args);
+      addToolMsg(msg.tool, msg.args);
       break;
     case 'graph_update':
-      currentGraph = msg.graph;
-      currentHealth = msg.health || {};
-      updateGraph(msg.graph);
-      updateInfoPanel(msg.graph, msg.health || {});
-      updateHeader(msg.graph, msg.health || {});
-      updateProgressBar(msg.health || {});
-      checkResolutionReady(msg.health || {});
-      fetchTheories();
-      break;
-    case 'turn_complete':
-      finishAgentTurn();
+      graphData = msg.graph || {};
+      healthData = msg.health || {};
+      renderGraph(graphData);
+      renderInfo(graphData, healthData);
+      updateHdrProgress(healthData);
+      checkResolveBtn(healthData);
+      fetchAndRenderTheories();
+      if (currentScreen === 'resolution') updateResHealthSidebar(healthData);
       break;
     case 'error':
-      showError(msg.content);
+      showErr(msg.content);
       break;
   }
 }
 
-function resetSilenceTimer() {
-  if (silenceTimer) clearTimeout(silenceTimer);
-  silenceTimer = setTimeout(() => finishAgentTurn(), 2000);
-}
-
-function finishAgentTurn() {
-  isResponding = false;
-  currentAgentBubble = null;
-  document.getElementById('typingIndicator').classList.add('hidden');
+function clearSilence() {
   if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
 }
+function setSilence() {
+  clearSilence();
+  silenceTimer = setTimeout(() => endAgentTurn(), 2000);
+}
+function endAgentTurn() {
+  agentBubble = null;
+  document.getElementById('typing').classList.add('hidden');
+  clearSilence();
+}
 
-// ==================== CHAT ====================
-function sendMessage() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-  input.value = '';
-  addUserMessage(text);
-  ws.send(JSON.stringify({ type: 'text', content: text }));
-  isResponding = true;
-  document.getElementById('typingIndicator').classList.remove('hidden');
-  if (currentParty === 'party_a') {
-    partyAHasMessage = true;
-    document.getElementById('tabPartyB').disabled = false;
+// =====================================================================
+// CHAT
+// =====================================================================
+function sendMsg() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if (!txt || !ws || ws.readyState !== 1) return;
+  inp.value = '';
+  addUserMsg(txt);
+  ws.send(JSON.stringify({ type:'text', content: txt }));
+  document.getElementById('typing').classList.remove('hidden');
+  if (currentParty === 'party_a' && !partyASpoke) {
+    partyASpoke = true;
+    document.getElementById('tabB').disabled = false;
   }
 }
 
-function addUserMessage(text) {
-  const div = document.createElement('div');
-  div.className = 'msg msg-user' + (currentParty === 'party_b' ? ' party-b' : '');
+function addUserMsg(txt) {
+  const d = document.createElement('div');
+  d.className = 'msg msg-user' + (currentParty === 'party_b' ? ' pb' : '');
   const name = currentParty === 'party_a' ? config.partyAName : config.partyBName;
-  div.innerHTML = `<div class="msg-author">${escHtml(name)}</div>${escHtml(text)}`;
-  document.getElementById('chatMessages').appendChild(div);
-  scrollChat();
+  d.innerHTML = `<div class="msg-author">${h(name)}</div>${h(txt)}`;
+  appendToChat(d);
+  if (currentScreen === 'resolution') appendResChat('user', txt, name);
 }
 
 function appendAgentText(content, author) {
-  if (!currentAgentBubble) {
-    currentAgentBubble = document.createElement('div');
-    currentAgentBubble.className = 'msg msg-agent';
-    currentAgentBubble.innerHTML = `<div class="msg-author">${escHtml(author || 'mediator')}</div><span class="agent-text"></span>`;
-    document.getElementById('chatMessages').appendChild(currentAgentBubble);
+  if (!agentBubble) {
+    agentBubble = document.createElement('div');
+    agentBubble.className = 'msg msg-agent';
+    agentBubble.innerHTML = `<div class="msg-author">${h(author || 'mediator')}</div><span class="atxt"></span>`;
+    appendToChat(agentBubble);
   }
-  const span = currentAgentBubble.querySelector('.agent-text');
-  span.textContent += content;
+  agentBubble.querySelector('.atxt').textContent += content;
   scrollChat();
   if (currentScreen === 'resolution') {
-    appendResChat('agent', content, author);
+    // Update res chat with streaming text
+    const last = document.querySelector('#resChat > div[data-role="agent"]:last-child');
+    if (last) { last.querySelector('.rc-body').textContent += content; }
+    else { appendResChat('agent', content, author); }
+    document.getElementById('resChat').scrollTop = 99999;
   }
 }
 
-function addToolNotif(tool, args) {
-  toolNotifCount++;
-  const container = document.getElementById('chatMessages');
-  if (toolNotifCount > MAX_TOOL_NOTIFS) {
-    const existing = container.querySelectorAll('.msg-tool');
-    if (existing.length > MAX_TOOL_NOTIFS) {
-      const collapsed = container.querySelector('.tool-collapsed');
-      if (collapsed) {
-        const n = parseInt(collapsed.dataset.count) + 1;
-        collapsed.dataset.count = n;
-        collapsed.textContent = `+ ${n} more extractions`;
-      } else {
-        const c = document.createElement('div');
-        c.className = 'msg msg-tool tool-collapsed';
-        c.dataset.count = '1';
-        c.textContent = '+ 1 more extractions';
-        existing[0].before(c);
-        existing[0].remove();
-      }
-      return;
+function addToolMsg(tool, args) {
+  toolCount++;
+  const container = document.getElementById('chatMsgs');
+  const collapsed = container.querySelector('.tool-collapsed');
+  if (toolCount > MAX_TOOLS) {
+    if (collapsed) {
+      const n = parseInt(collapsed.dataset.n || '0') + 1;
+      collapsed.dataset.n = n;
+      collapsed.textContent = `+ ${n} more extractions`;
+    } else {
+      const c = document.createElement('div');
+      c.className = 'msg msg-tool tool-collapsed';
+      c.dataset.n = '1';
+      c.textContent = '+ 1 more extractions';
+      container.appendChild(c);
+      // Remove oldest tool msgs
+      const tools = container.querySelectorAll('.msg-tool:not(.tool-collapsed)');
+      if (tools.length > 5) tools[0].remove();
     }
+    return;
   }
-  const div = document.createElement('div');
-  div.className = 'msg msg-tool';
-  const argsStr = typeof args === 'object' ? JSON.stringify(args).slice(0,80) : (args||'');
-  div.innerHTML = `→ <span class="tool-name">${escHtml(tool)}</span>: ${escHtml(argsStr)}`;
-  container.appendChild(div);
-  scrollChat();
+  const d = document.createElement('div');
+  d.className = 'msg msg-tool';
+  const aStr = typeof args === 'object' ? JSON.stringify(args).slice(0, 60) : String(args || '');
+  d.innerHTML = `→ <span class="tn">${h(tool)}</span>: ${h(aStr)}`;
+  appendToChat(d);
 }
 
-function addSystemMessage(text) {
-  const div = document.createElement('div');
-  div.className = 'msg msg-system';
-  div.textContent = text;
-  document.getElementById('chatMessages').appendChild(div);
-  scrollChat();
+function addSysMsg(txt) {
+  const d = document.createElement('div');
+  d.className = 'msg msg-sys';
+  d.textContent = txt;
+  appendToChat(d);
 }
 
-function showError(text) {
-  const div = document.createElement('div');
-  div.className = 'msg msg-system';
-  div.style.color = 'var(--red)';
-  div.textContent = '⚠ ' + text;
-  document.getElementById('chatMessages').appendChild(div);
-  scrollChat();
+function showErr(txt) {
+  const d = document.createElement('div');
+  d.className = 'msg msg-sys';
+  d.style.color = 'var(--red)';
+  d.textContent = '⚠ ' + txt;
+  appendToChat(d);
 }
 
+function appendToChat(el) {
+  const c = document.getElementById('chatMsgs');
+  c.appendChild(el);
+  scrollChat();
+}
 function scrollChat() {
-  const c = document.getElementById('chatMessages');
+  const c = document.getElementById('chatMsgs');
   c.scrollTop = c.scrollHeight;
 }
 
-// ==================== AUDIO ====================
+// =====================================================================
+// AUDIO
+// =====================================================================
 async function toggleMic() {
   const btn = document.getElementById('micBtn');
   if (isRecording) {
     stopMic();
-    btn.classList.remove('recording');
+    btn.classList.remove('rec');
     btn.textContent = '🎤';
   } else {
     try {
       await startMic();
-      btn.classList.add('recording');
+      btn.classList.add('rec');
       btn.textContent = '🔴';
     } catch(e) {
-      btn.classList.add('disabled-mic');
+      btn.title = 'Microphone not available';
       btn.textContent = '🚫';
     }
   }
 }
 
 async function startMic() {
-  audioCtx = new AudioContext({ sampleRate: 16000 });
+  micCtx = new AudioContext({ sampleRate: 16000 });
   micStream = await navigator.mediaDevices.getUserMedia({
     audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true, noiseSuppression: true }
   });
-  const source = audioCtx.createMediaStreamSource(micStream);
-  processor = audioCtx.createScriptProcessor(4096, 1, 1);
-  processor.onaudioprocess = (e) => {
-    if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
-    const f32 = e.inputBuffer.getChannelData(0);
-    const i16 = new Int16Array(f32.length);
-    for (let i = 0; i < f32.length; i++)
-      i16[i] = Math.max(-32768, Math.min(32767, f32[i] * 32768));
-    ws.send(i16.buffer);
+  const src = micCtx.createMediaStreamSource(micStream);
+  micProcessor = micCtx.createScriptProcessor(4096, 1, 1);
+  micProcessor.onaudioprocess = e => {
+    if (!isRecording || !ws || ws.readyState !== 1) return;
+    const f = e.inputBuffer.getChannelData(0);
+    const i = new Int16Array(f.length);
+    for (let n = 0; n < f.length; n++)
+      i[n] = Math.max(-32768, Math.min(32767, f[n] * 32768));
+    ws.send(i.buffer);
   };
-  source.connect(processor);
-  processor.connect(audioCtx.destination);
+  src.connect(micProcessor);
+  micProcessor.connect(micCtx.destination);
   isRecording = true;
 }
 
 function stopMic() {
   isRecording = false;
-  if (micStream) micStream.getTracks().forEach(t => t.stop());
-  if (audioCtx) audioCtx.close().catch(() => {});
-  micStream = null; audioCtx = null; processor = null;
+  micStream?.getTracks().forEach(t => t.stop());
+  try { micCtx?.close(); } catch(e) {}
+  micCtx = micStream = micProcessor = null;
 }
 
-function initPlayback() { playCtx = new AudioContext({ sampleRate: 24000 }); }
-
-function queueAudio(pcmBuf) {
-  if (!playCtx) initPlayback();
-  const i16 = new Int16Array(pcmBuf);
+function enqueueAudio(buf) {
+  if (!playCtx) playCtx = new AudioContext({ sampleRate: 24000 });
+  const i16 = new Int16Array(buf);
   const f32 = new Float32Array(i16.length);
   for (let i = 0; i < i16.length; i++) f32[i] = i16[i] / 32768;
-  const buf = playCtx.createBuffer(1, f32.length, 24000);
-  buf.getChannelData(0).set(f32);
-  audioQueue.push(buf);
-  if (!playing) playNext();
+  const ab = playCtx.createBuffer(1, f32.length, 24000);
+  ab.getChannelData(0).set(f32);
+  audioQueue.push(ab);
+  if (!audioPlaying) playNextAudio();
 }
 
-function playNext() {
-  if (!audioQueue.length) { playing = false; return; }
-  playing = true;
+function playNextAudio() {
+  if (!audioQueue.length) { audioPlaying = false; return; }
+  audioPlaying = true;
   const src = playCtx.createBufferSource();
   src.buffer = audioQueue.shift();
   src.connect(playCtx.destination);
-  src.onended = playNext;
+  src.onended = playNextAudio;
   src.start();
 }
 
-// ==================== D3 GRAPH ====================
-let svgG, linkG, nodeG, labelG, graphW, graphH;
+// =====================================================================
+// D3 GRAPH
+// =====================================================================
+let svgRoot, gLinks, gNodes, gLabels, gW, gH;
 
 function initGraph() {
-  const container = document.getElementById('graphContainer');
-  graphW = container.clientWidth;
-  graphH = container.clientHeight;
+  const panel = document.getElementById('graphPanel');
+  gW = panel.clientWidth || 600;
+  gH = panel.clientHeight || 500;
   const svg = d3.select('#graphSvg');
   svg.selectAll('*').remove();
-  svg.attr('viewBox', `0 0 ${graphW} ${graphH}`);
+  svg.attr('viewBox', `0 0 ${gW} ${gH}`);
 
   // Arrow marker
   svg.append('defs').append('marker')
-    .attr('id','arrow').attr('viewBox','0 -5 10 10')
-    .attr('refX',20).attr('refY',0).attr('markerWidth',6).attr('markerHeight',6)
-    .attr('orient','auto')
-    .append('path').attr('d','M0,-5L10,0L0,5').attr('fill','#1a1a2e');
+    .attr('id', 'arr').attr('viewBox', '0 -5 10 10')
+    .attr('refX', 22).attr('refY', 0)
+    .attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
+    .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#1e1e30');
 
-  svgG = svg.append('g');
-  linkG = svgG.append('g');
-  nodeG = svgG.append('g');
-  labelG = svgG.append('g');
+  svgRoot = svg.append('g');
+  gLinks = svgRoot.append('g');
+  gNodes = svgRoot.append('g');
+  gLabels = svgRoot.append('g');
 
-  // Zoom
-  svg.call(d3.zoom().scaleExtent([0.3, 4]).on('zoom', (e) => svgG.attr('transform', e.transform)));
+  svg.call(
+    d3.zoom().scaleExtent([0.2, 6])
+      .on('zoom', e => svgRoot.attr('transform', e.transform))
+  );
 }
 
-function convertGraph(raw) {
+function rawToD3(raw) {
   if (!raw) return { nodes: [], links: [] };
+  const entities = raw.entities || {};
+  const rels = raw.relationships || [];
   const nodes = [];
+  const nmap = {};
+
+  Object.entries(entities).forEach(([type, items]) => {
+    if (!Array.isArray(items)) return;
+    const singType = type.replace(/s$/, '');
+    items.forEach(e => {
+      const id = e.id || e.name || (singType + '_' + Math.random().toString(36).slice(2,6));
+      const pos = nodePositions[id];
+      const n = {
+        id, type: singType, data: e,
+        label: (e.name || e.description || id).slice(0, 22),
+        party: e.contributed_by || null,
+        x: pos?.x, y: pos?.y,
+      };
+      nodes.push(n);
+      nmap[id] = n;
+    });
+  });
+
   const links = [];
-  const nodeMap = {};
-
-  const entities = raw.entities || raw.nodes || {};
-  const relationships = raw.relationships || raw.edges || [];
-
-  // Handle entities as object or array
-  if (Array.isArray(entities)) {
-    entities.forEach(e => {
-      const n = { id: e.id || e.name, type: (e.type||'actor').toLowerCase(), label: e.name||e.id, data: e,
-        x: nodePositions[e.id||e.name]?.x, y: nodePositions[e.id||e.name]?.y,
-        party: e.contributed_by || e.party || null };
-      nodes.push(n); nodeMap[n.id] = n;
-    });
-  } else {
-    Object.entries(entities).forEach(([type, items]) => {
-      if (!Array.isArray(items)) return;
-      items.forEach(e => {
-        const id = e.id || e.name || `${type}_${Math.random().toString(36).slice(2,6)}`;
-        const n = { id, type: type.toLowerCase().replace(/s$/, ''), label: e.name || e.description?.slice(0,25) || id, data: e,
-          x: nodePositions[id]?.x, y: nodePositions[id]?.y,
-          party: e.contributed_by || e.party || null };
-        nodes.push(n); nodeMap[n.id] = n;
-      });
-    });
-  }
-
-  (Array.isArray(relationships) ? relationships : []).forEach(r => {
-    const src = r.source || r.from;
-    const tgt = r.target || r.to;
-    if (nodeMap[src] && nodeMap[tgt]) {
-      links.push({ source: src, target: tgt, label: r.type || r.label || '' });
-    }
+  (Array.isArray(rels) ? rels : []).forEach(r => {
+    const s = r.source || r.from;
+    const t = r.target || r.to;
+    if (nmap[s] && nmap[t]) links.push({ source: s, target: t, type: r.type || '' });
   });
 
   return { nodes, links };
 }
 
-function updateGraph(raw) {
-  if (!svgG) return;
-  const { nodes, links } = convertGraph(raw);
+function renderGraph(raw) {
+  if (!svgRoot) return;
+  const { nodes, links } = rawToD3(raw);
 
-  // Data join: links
-  const link = linkG.selectAll('line').data(links, d => `${d.source}-${d.target}`);
-  link.exit().remove();
-  const linkEnter = link.enter().append('line')
-    .attr('stroke','#1a1a2e').attr('stroke-width',1).attr('marker-end','url(#arrow)');
+  // LINKS
+  const linkSel = gLinks.selectAll('line').data(links, d => `${d.source}-${d.target}`);
+  linkSel.exit().remove();
+  linkSel.enter().append('line')
+    .attr('stroke', '#1e1e30').attr('stroke-width', 1.5)
+    .attr('marker-end', 'url(#arr)');
 
-  // Data join: nodes
-  const node = nodeG.selectAll('circle').data(nodes, d => d.id);
-  node.exit().transition().duration(300).attr('r',0).remove();
-  const nodeEnter = node.enter().append('circle')
+  // NODES
+  const drag = d3.drag()
+    .on('start', (e, d) => { if (!e.active) sim?.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on('drag',  (e, d) => { d.fx = e.x; d.fy = e.y; })
+    .on('end',   (e, d) => { if (!e.active) sim?.alphaTarget(0); d.fx = null; d.fy = null; });
+
+  const nodeSel = gNodes.selectAll('circle').data(nodes, d => d.id);
+  nodeSel.exit().transition().duration(300).attr('r', 0).remove();
+  const nodeEnter = nodeSel.enter().append('circle')
     .attr('r', 0)
-    .attr('fill', d => NODE_COLORS[d.type] || '#888')
-    .attr('stroke', d => (NODE_COLORS[d.type] || '#888') + '66')
+    .attr('fill', d => NODE_CLR[d.type] || '#888')
+    .attr('stroke', d => partyStroke(d))
     .attr('stroke-width', d => d.party ? 3 : 1.5)
-    .style('cursor', 'pointer')
-    .call(d3.drag()
-      .on('start', (e,d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
-      .on('drag', (e,d) => { d.fx = e.x; d.fy = e.y; })
-      .on('end', (e,d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
-    )
-    .on('mouseover', showTooltip)
-    .on('mouseout', hideTooltip);
+    .style('cursor', 'grab')
+    .call(drag)
+    .on('mouseover', tipShow)
+    .on('mousemove', tipMove)
+    .on('mouseout', () => document.getElementById('gTip').style.display = 'none');
 
-  // Entry animation
-  nodeEnter.transition().duration(400).attr('r', d => d.type === 'actor' ? 14 : 8);
+  nodeEnter.transition().duration(400)
+    .attr('r', d => d.type === 'actor' ? 14 : 8);
 
-  // Brief glow
   nodeEnter.each(function(d) {
-    const el = d3.select(this);
-    const c = NODE_COLORS[d.type] || '#888';
-    el.style('filter', `drop-shadow(0 0 8px ${c})`);
-    setTimeout(() => el.style('filter', null), 1000);
+    const clr = NODE_CLR[d.type] || '#888';
+    d3.select(this).style('filter', `drop-shadow(0 0 8px ${clr})`);
+    setTimeout(() => d3.select(this).style('filter', null), 900);
   });
 
-  // Party ring coloring via stroke
-  nodeEnter.attr('stroke', d => {
-    if (d.party === 'party_a') return 'var(--blue)';
-    if (d.party === 'party_b') return 'var(--orange)';
-    return (NODE_COLORS[d.type] || '#888') + '66';
-  });
+  // LABELS
+  const lblSel = gLabels.selectAll('text').data(nodes, d => d.id);
+  lblSel.exit().remove();
+  lblSel.enter().append('text')
+    .attr('fill', 'var(--text2)').attr('font-size', '9px').attr('text-anchor', 'middle')
+    .attr('dy', d => (d.type === 'actor' ? 14 : 8) + 12)
+    .text(d => d.label);
 
-  // Labels
-  const label = labelG.selectAll('text').data(nodes, d => d.id);
-  label.exit().remove();
-  label.enter().append('text')
-    .attr('text-anchor','middle').attr('dy', d => (d.type === 'actor' ? 14 : 8) + 12)
-    .attr('fill','var(--text2)').attr('font-size','9px')
-    .text(d => (d.label || '').slice(0, 18));
-
-  // Simulation
-  const allNodes = nodeG.selectAll('circle').data();
-  const allLinks = linkG.selectAll('line').data();
-
-  if (simulation) simulation.stop();
-  simulation = d3.forceSimulation(allNodes)
-    .force('link', d3.forceLink(allLinks).id(d => d.id).distance(80))
-    .force('charge', d3.forceManyBody().strength(-200))
-    .force('center', d3.forceCenter(graphW/2, graphH/2))
-    .force('collision', d3.forceCollide().radius(d => (d.type === 'actor' ? 14 : 8) + 5))
+  // SIMULATION
+  const allNodes = gNodes.selectAll('circle').data();
+  const allLinks = gLinks.selectAll('line').data();
+  if (sim) sim.stop();
+  sim = d3.forceSimulation(allNodes)
+    .force('link', d3.forceLink(allLinks).id(d => d.id).distance(85))
+    .force('charge', d3.forceManyBody().strength(-220))
+    .force('center', d3.forceCenter(gW / 2, gH / 2))
+    .force('collide', d3.forceCollide().radius(d => (d.type === 'actor' ? 14 : 8) + 6))
     .on('tick', () => {
-      linkG.selectAll('line')
-        .attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
-        .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
-      nodeG.selectAll('circle').attr('cx',d=>d.x).attr('cy',d=>d.y);
-      labelG.selectAll('text').attr('x',d=>d.x).attr('y',d=>d.y);
-      // Save positions
-      allNodes.forEach(d => { nodePositions[d.id] = { x:d.x, y:d.y }; });
+      gLinks.selectAll('line')
+        .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+      gNodes.selectAll('circle').attr('cx', d => d.x).attr('cy', d => d.y);
+      gLabels.selectAll('text').attr('x', d => d.x).attr('y', d => d.y);
+      allNodes.forEach(n => { nodePositions[n.id] = { x: n.x, y: n.y }; });
     });
 
-  // Update header stats
-  document.getElementById('headerStats').textContent = `${allNodes.length} nodes · ${allLinks.length} edges`;
+  document.getElementById('hdrStats').textContent =
+    `${allNodes.length} nodes · ${allLinks.length} edges`;
 }
 
-function showTooltip(event, d) {
-  const tip = document.getElementById('nodeTooltip');
-  tip.style.display = 'block';
-  tip.style.left = (event.offsetX + 15) + 'px';
-  tip.style.top = (event.offsetY - 10) + 'px';
-  let html = `<strong>${escHtml(d.label)}</strong><br>Type: ${d.type}`;
+function partyStroke(d) {
+  if (d.party === 'party_a') return 'var(--blue)';
+  if (d.party === 'party_b') return 'var(--orange)';
+  return (NODE_CLR[d.type] || '#888') + '66';
+}
+
+function tipShow(event, d) {
+  const tip = document.getElementById('gTip');
+  let html = `<strong>${h(d.label)}</strong><br><em>${d.type}</em>`;
   if (d.data) {
-    Object.entries(d.data).forEach(([k,v]) => {
-      if (k !== 'id' && k !== 'name' && k !== 'type' && v)
-        html += `<br>${k}: ${escHtml(String(v).slice(0,100))}`;
+    const skip = new Set(['id','created_at','contributed_by']);
+    Object.entries(d.data).forEach(([k, v]) => {
+      if (!skip.has(k) && v) html += `<br><span style="color:var(--text2)">${k}:</span> ${h(String(v).slice(0,80))}`;
     });
   }
-  if (d.party) html += `<br>Contributed by: ${d.party === 'party_a' ? config.partyAName : config.partyBName}`;
+  if (d.party) {
+    html += `<br><span style="color:var(--text2)">party:</span> ${d.party === 'party_a' ? h(config.partyAName) : h(config.partyBName)}`;
+  }
   tip.innerHTML = html;
+  tip.style.display = 'block';
+  tipMove(event);
+}
+function tipMove(event) {
+  const tip = document.getElementById('gTip');
+  const panel = document.getElementById('graphPanel').getBoundingClientRect();
+  tip.style.left = (event.clientX - panel.left + 14) + 'px';
+  tip.style.top  = (event.clientY - panel.top  - 10) + 'px';
 }
 
-function hideTooltip() { document.getElementById('nodeTooltip').style.display = 'none'; }
-
-async function refreshGraph() {
+async function loadGraph() {
   try {
     const r = await fetch('/api/graph');
-    if (r.ok) { const g = await r.json(); currentGraph = g; updateGraph(g); }
+    if (r.ok) { graphData = await r.json(); renderGraph(graphData); }
+    const h2 = await fetch('/api/graph/health');
+    if (h2.ok) { healthData = await h2.json(); renderInfo(graphData, healthData); updateHdrProgress(healthData); checkResolveBtn(healthData); }
   } catch(e) {}
 }
 
-// ==================== INFO PANEL ====================
-function updateInfoPanel(graph, health) {
-  // Case info
-  if (graph) {
-    document.getElementById('infoCaseTitle').textContent = graph.title || 'Untitled Case';
-    document.getElementById('infoCaseTitle').style.fontStyle = graph.title ? 'normal' : 'italic';
-    document.getElementById('infoCaseSummary').textContent = graph.summary || '';
-    const esc = graph.escalation_level || graph.escalation || '';
-    const escEl = document.getElementById('infoEscalation');
-    if (esc) {
-      const colors = { low:'var(--green)', moderate:'var(--gold)', medium:'var(--gold)', high:'var(--red)', critical:'var(--red)' };
-      escEl.innerHTML = `<span class="escalation-badge" style="background:${colors[esc.toLowerCase()]||'var(--text2)'};color:#0a0a0f">${esc}</span>`;
-    } else { escEl.innerHTML = ''; }
-  }
+// =====================================================================
+// INFO PANEL
+// =====================================================================
+function renderInfo(g, hc) {
+  // Case
+  const title = g?.title || '';
+  const nameEl = document.getElementById('caseName');
+  nameEl.textContent = title || 'Untitled Case';
+  nameEl.style.fontStyle = title ? 'normal' : 'italic';
+  nameEl.style.color = title ? 'var(--text)' : 'var(--text2)';
+  document.getElementById('caseSummary').textContent = g?.summary || '';
+  const esc = g?.escalation_level || '';
+  const escEl = document.getElementById('caseEsc');
+  if (esc) {
+    const c = { low:'var(--green)', moderate:'var(--gold)', medium:'var(--gold)', high:'var(--red)', critical:'var(--red)' };
+    escEl.innerHTML = `<span class="esc-pill" style="background:${c[esc.toLowerCase()]||'var(--text2)'};color:#0a0a0f">${esc}</span>`;
+  } else escEl.innerHTML = '';
 
-  // Ontology counts
-  const entities = graph?.entities || {};
-  PRIMITIVES.forEach(p => {
-    const key = p.name.toLowerCase();
-    const el = document.getElementById('onto-' + key);
-    if (el) {
-      const items = entities[key + 's'] || entities[key] || [];
-      el.textContent = Array.isArray(items) ? items.length : 0;
-    }
+  // Onto counts
+  const ents = g?.entities || {};
+  PRIMS.forEach(p => {
+    const el = document.getElementById('oc-' + p.name.toLowerCase());
+    if (!el) return;
+    const key = p.name.toLowerCase() + 's';
+    el.textContent = Array.isArray(ents[key]) ? ents[key].length : 0;
   });
 
   // Health
-  if (health) {
-    const score = health.score != null ? health.score : 0;
-    const scoreEl = document.getElementById('healthScore');
-    scoreEl.textContent = score + '%';
-    scoreEl.style.color = score < 30 ? 'var(--red)' : score < 75 ? 'var(--gold)' : 'var(--green)';
+  if (!hc) return;
+  const score = hc.score ?? 0;
+  const hn = document.getElementById('healthNum');
+  hn.textContent = score + '%';
+  hn.style.color = score < 30 ? 'var(--red)' : score < 75 ? 'var(--gold)' : 'var(--green)';
 
-    const checksEl = document.getElementById('healthChecks');
-    const checks = health.checks || health.details || [];
-    if (Array.isArray(checks)) {
-      checksEl.innerHTML = checks.map(c => {
-        const pass = c.passed || c.ok || c.status === 'pass';
-        return `<div class="health-item"><span class="${pass?'check':'cross'}">${pass?'✓':'✗'}</span> ${escHtml(c.description || c.name || c.label || '')}</div>`;
-      }).join('');
-    }
+  const checks = hc.checks || [];
+  document.getElementById('healthChecks').innerHTML = checks.map(c =>
+    `<div class="hc-item"><span class="${c.passed ? 'hc-ok' : 'hc-no'}">${c.passed ? '✓' : '✗'}</span> ${h(c.description || '')}</div>`
+  ).join('');
 
-    const gapsEl = document.getElementById('healthGaps');
-    const gaps = health.gaps || [];
-    gapsEl.innerHTML = gaps.map(g => `<p>${escHtml(typeof g === 'string' ? g : g.description || '')}</p>`).join('');
+  const gaps = hc.gaps || [];
+  document.getElementById('healthGaps').innerHTML = gaps.map(g =>
+    `<p>• ${h(typeof g === 'string' ? g : g.description || '')}</p>`
+  ).join('');
 
-    // Per-party
-    const ppEl = document.getElementById('partyProgress');
-    const pp = health.per_party || health.per_party_health_check || {};
-    let ppHtml = '';
-    if (pp.party_a != null || pp.party_b != null) {
-      const aScore = pp.party_a?.score ?? pp.party_a ?? 0;
-      const bScore = pp.party_b?.score ?? pp.party_b ?? 0;
-      ppHtml += `<div class="party-progress"><div class="party-progress-label">${escHtml(config.partyAName)}: ${aScore}%</div><div class="party-progress-bar"><div class="party-progress-fill" style="width:${aScore}%"></div></div></div>`;
-      ppHtml += `<div class="party-progress"><div class="party-progress-label">${escHtml(config.partyBName)}: ${bScore}%</div><div class="party-progress-bar"><div class="party-progress-fill" style="width:${bScore}%"></div></div></div>`;
-      document.getElementById('tabAScore').textContent = aScore + '%';
-      document.getElementById('tabBScore').textContent = bScore + '%';
-    }
-    ppEl.innerHTML = ppHtml;
-  }
+  // Per-party
+  const pp = hc.per_party || {};
+  const aS = pp.party_a?.score ?? pp.party_a ?? 0;
+  const bS = pp.party_b?.score ?? pp.party_b ?? 0;
+  document.getElementById('partyProg').innerHTML = [
+    [config.partyAName, aS, 'tabAScore'],
+    [config.partyBName, bS, 'tabBScore'],
+  ].map(([name, s, scoreId]) => {
+    const el = document.getElementById(scoreId);
+    if (el) el.textContent = s + '%';
+    return `<div class="pp-bar-wrap">
+      <div class="pp-lbl">${h(name)}: ${s}%</div>
+      <div class="pp-bar"><div class="pp-fill" style="width:${s}%"></div></div>
+    </div>`;
+  }).join('');
 }
 
-function updateHeader(graph, health) {
-  // Phase
-  const phase = graph?.phase || health?.phase || 'arrive';
-  const badge = document.getElementById('phaseBadge');
-  const phaseColors = { arrive:'var(--blue)', structure:'var(--accent)', verify:'var(--gold)', resolve:'var(--green)' };
-  badge.style.background = phaseColors[phase] || 'var(--blue)';
-  badge.textContent = phase.toUpperCase();
-
-  // Show common ground preview in verify/resolve
-  const cgSection = document.getElementById('commonGroundPreview');
-  if (phase === 'verify' || phase === 'resolve') {
-    cgSection.classList.remove('hidden');
-  }
-}
-
-function updateProgressBar(health) {
-  const score = health?.score ?? 0;
-  const fill = document.getElementById('progressFill');
+function updateHdrProgress(hc) {
+  const score = hc?.score ?? 0;
+  const fill = document.getElementById('progFill');
   fill.style.width = score + '%';
   fill.style.background = score < 30 ? 'var(--red)' : score < 75 ? 'var(--gold)' : 'var(--green)';
+
+  const phase = hc?.phase || graphData?.phase || 'arrive';
+  const pill = document.getElementById('phasePill');
+  const phClr = { arrive: 'var(--blue)', structure: 'var(--accent)', verify: 'var(--gold)', resolve: 'var(--green)' };
+  pill.style.background = phClr[phase] || 'var(--blue)';
+  pill.style.color = phase === 'structure' ? '#0a0a0f' : '#fff';
+  pill.textContent = phase.toUpperCase();
 }
 
-function checkResolutionReady(health) {
+function checkResolveBtn(hc) {
   const btn = document.getElementById('resolveBtn');
-  const score = health?.score ?? 0;
-  if (score >= 75) {
-    btn.classList.add('ready-pulse');
-    btn.disabled = false;
-  } else if (score >= 60) {
-    btn.disabled = false;
-    btn.classList.remove('ready-pulse');
-  } else {
-    btn.disabled = true;
-    btn.classList.remove('ready-pulse');
-  }
+  const score = hc?.score ?? 0;
+  if (score >= 75) { btn.disabled = false; btn.classList.add('ready-pulse'); }
+  else if (score >= 60) { btn.disabled = false; btn.classList.remove('ready-pulse'); }
+  else { btn.disabled = true; btn.classList.remove('ready-pulse'); }
 }
 
-// ==================== THEORIES ====================
-async function fetchTheories() {
+// =====================================================================
+// THEORIES
+// =====================================================================
+async function fetchAndRenderTheories() {
   try {
     const r = await fetch('/api/theories');
     if (!r.ok) return;
-    const theories = await r.json();
-    renderTheories(theories);
+    const th = await r.json();
+    renderTheories(th, 'theoriesDiv');
+    if (currentScreen === 'resolution') renderTheories(th, 'resTheories', true);
   } catch(e) {}
 }
 
-function renderTheories(theories) {
-  const el = document.getElementById('theoriesPanel');
-  if (!theories || !theories.length) { el.innerHTML = '<span style="color:var(--text2);font-size:11px;">No theories detected yet</span>'; return; }
-  el.innerHTML = theories.slice(0,3).map(t =>
-    `<div class="theory-card" title="${escHtml(t.description||t.explanation||'')}">
-      <div class="theory-name">📖 ${escHtml(t.name||t.theory||'')}</div>
-      <div class="theory-score">${t.score != null ? t.score + ' matching' : ''}</div>
-      <div class="theory-reason">${escHtml(t.reason||t.match_reason||'')}</div>
-    </div>`
+function renderTheories(th, elId, full = false) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!th?.length) { el.innerHTML = '<span style="color:var(--text2);font-size:11px">No theories matched yet</span>'; return; }
+  el.innerHTML = th.slice(0, 3).map(t =>
+    full
+      ? `<div class="res-th">
+          <div class="res-th-name">📖 ${h(t.name)}</div>
+          <div class="res-th-school">${h(t.school)}</div>
+          <div class="res-th-explain">${h(t.match_reason || t.reason)}</div>
+         </div>`
+      : `<div class="th-card" title="${h(t.description)}">
+          <div class="th-name">📖 ${h(t.name)}</div>
+          <div class="th-score">${t.score} matching nodes</div>
+          <div class="th-reason">${h(t.reason)}</div>
+         </div>`
   ).join('');
 }
 
-// ==================== RESOLUTION ====================
+// =====================================================================
+// RESOLUTION
+// =====================================================================
 function triggerResolution() {
-  const msg = `[MEDIATION PHASE: RESOLUTION] Both parties (${config.partyAName} and ${config.partyBName}) have shared their perspectives. The case type is ${config.caseType} with ${config.mediatorStyle} mediation style. Please: 1) Call run_health_check() to verify readiness. 2) Call suggest_applicable_theories() to identify frameworks. 3) Call analyze_common_ground() to find overlaps. 4) Call generate_resolution_report() for the full analysis. Then propose 2-3 concrete resolution paths with process steps.`;
+  document.getElementById('resParties').textContent =
+    `${config.partyAName} & ${config.partyBName}`;
 
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'text', content: msg }));
-  }
+  const msg = [
+    `[MEDIATION PHASE: RESOLUTION]`,
+    `Both parties (${config.partyAName} and ${config.partyBName}) have shared their perspectives.`,
+    `Case type: ${config.caseType}. Mediator style: ${config.mediatorStyle}.`,
+    `Please:`,
+    `1) Call run_health_check() to verify readiness.`,
+    `2) Call suggest_applicable_theories() to identify frameworks.`,
+    `3) Call analyze_common_ground() to find overlaps.`,
+    `4) Call generate_resolution_report() for the full analysis.`,
+    `Then propose 2-3 concrete resolution paths with: what each party gets/gives, why it works, and next steps.`,
+  ].join(' ');
 
-  isResponding = true;
-  document.getElementById('typingIndicator').classList.remove('hidden');
-  showScreen('resolution');
-  document.getElementById('resParties').textContent = `${config.partyAName} & ${config.partyBName}`;
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: 'text', content: msg }));
+  document.getElementById('typing').classList.remove('hidden');
 
-  // Populate resolution with current data
-  updateResolutionView();
+  goTo('resolution');
+  updateResHealthSidebar(healthData);
+  fetchAndRenderTheories();
+  agentBubble = null; // Force new bubble in resolution chat
 }
 
-function updateResolutionView() {
-  // Health summary in sidebar
-  const rh = document.getElementById('resHealth');
-  const score = currentHealth?.score ?? 0;
-  rh.innerHTML = `<div class="health-score" style="color:${score<30?'var(--red)':score<75?'var(--gold)':'var(--green)'}">${score}%</div>`;
-
-  // Theories in sidebar
-  fetchTheories().then(() => {
-    const tp = document.getElementById('theoriesPanel');
-    document.getElementById('resTheories').innerHTML = tp.innerHTML.replace(/theory-card/g, 'res-theory');
-  });
-}
-
-function appendResChat(role, text, author) {
+function appendResChat(role, txt, author) {
   const c = document.getElementById('resChat');
-  const div = document.createElement('div');
-  div.style.cssText = `margin:4px 0;font-size:12px;line-height:1.5;padding:6px 8px;border-radius:4px;background:${role==='agent'?'var(--panel-raised)':'var(--panel)'}`;
-  if (role === 'agent') {
-    // Accumulate into last agent div
-    const last = c.lastElementChild;
-    if (last && last.dataset.role === 'agent') { last.querySelector('span').textContent += text; c.scrollTop = c.scrollHeight; return; }
-    div.dataset.role = 'agent';
-    div.innerHTML = `<span style="font-size:9px;color:var(--text2)">${escHtml(author||'mediator')}</span><br><span>${escHtml(text)}</span>`;
-  } else {
-    div.dataset.role = 'user';
-    div.innerHTML = `<span style="font-size:9px;color:var(--accent)">You</span><br>${escHtml(text)}`;
-  }
-  c.appendChild(div);
+  const d = document.createElement('div');
+  d.dataset.role = role;
+  d.style.cssText = `margin:4px 0;padding:6px 8px;border-radius:4px;font-size:12px;line-height:1.55;background:${role==='agent'?'var(--panel-raised)':'var(--panel)'}`;
+  d.innerHTML = `<div style="font-size:9px;color:var(--text2);margin-bottom:2px">${h(author || (role==='agent'?'mediator':'You'))}</div><span class="rc-body">${h(txt)}</span>`;
+  c.appendChild(d);
   c.scrollTop = c.scrollHeight;
-
-  // Try to parse resolution paths from agent text
-  tryParseResolution(text);
 }
 
-function tryParseResolution(text) {
-  // Simple heuristic: if text contains "Resolution Path" or "Path 1", populate cards
-  // The actual structured data would come from graph_update; this is a fallback
+function sendResMsg() {
+  const inp = document.getElementById('resInput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  inp.value = '';
+  appendResChat('user', txt);
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type:'text', content: txt }));
+  agentBubble = null;
 }
 
-function sendResMessage() {
-  const input = document.getElementById('resChatInput');
-  const text = input.value.trim();
-  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
-  input.value = '';
-  appendResChat('user', text);
-  ws.send(JSON.stringify({ type: 'text', content: text }));
-  isResponding = true;
+function updateResHealthSidebar(hc) {
+  const el = document.getElementById('resHealthDiv');
+  if (!el || !hc) return;
+  const score = hc.score ?? 0;
+  el.innerHTML = `<div class="res-health-score" style="color:${score<30?'var(--red)':score<75?'var(--gold)':'var(--green)'}">${score}%</div>` +
+    (hc.gaps || []).slice(0, 3).map(g => `<p style="font-size:11px;color:var(--text2);margin:3px 0">• ${h(typeof g==='string'?g:g.description||'')}</p>`).join('');
 }
 
 function resAction(action) {
+  const styleList = STYLES.map(s => s.id);
   switch(action) {
     case 'style': {
-      const styles = ['empathetic','analytical','directive'];
-      const next = styles[(styles.indexOf(config.mediatorStyle)+1) % styles.length];
+      const next = styleList[(styleList.indexOf(config.mediatorStyle) + 1) % styleList.length];
       config.mediatorStyle = next;
-      fetch('/api/configure', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({style:next, case_type:config.caseType}) })
-        .then(() => triggerResolution()).catch(() => {});
+      fetch('/api/configure', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ style: next, case_type: config.caseType }) })
+        .then(() => triggerResolution()).catch(() => triggerResolution());
       break;
     }
     case 'clarify': {
-      const msg = '[CLARIFICATION MODE] Based on the resolution analysis, what additional questions would help refine these paths?';
-      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type:'text', content:msg }));
+      const msg = '[CLARIFICATION MODE] Based on the resolution analysis, what 3-5 targeted questions would help refine and improve these resolution paths?';
+      sendToWs(msg);
       appendResChat('user', msg);
       break;
     }
     case 'ideas': {
-      const msg = '[CREATIVE MODE] Think outside the box. What unconventional resolution approaches might work here? Consider all applicable theories.';
-      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type:'text', content:msg }));
+      const msg = '[CREATIVE MODE] Think creatively and unconventionally. What 2-3 innovative resolution approaches could work here that we haven\'t considered? Reference applicable theories.';
+      sendToWs(msg);
       appendResChat('user', msg);
       break;
     }
-    case 'export': exportSummary(); break;
+    case 'export':
+      exportSummary();
+      break;
   }
+}
+
+function sendToWs(msg) {
+  if (ws && ws.readyState === 1) { ws.send(JSON.stringify({ type: 'text', content: msg })); agentBubble = null; }
 }
 
 function exportSummary() {
-  let text = `CONCORDIA — Mediation Summary\n${'='.repeat(40)}\n\n`;
-  text += `Case Type: ${config.caseType}\nMediator Style: ${config.mediatorStyle}\n`;
-  text += `Party 1: ${config.partyAName}\nParty 2: ${config.partyBName}\n\n`;
-  text += `Health Score: ${currentHealth?.score ?? 'N/A'}%\n\n`;
-  if (currentGraph?.summary) text += `Summary: ${currentGraph.summary}\n\n`;
-  if (currentHealth?.gaps?.length) {
-    text += `Gaps:\n${currentHealth.gaps.map(g => `- ${typeof g==='string'?g:g.description||''}`).join('\n')}\n\n`;
-  }
-  // Collect resolution chat
-  const chatEls = document.querySelectorAll('#resChat > div');
-  if (chatEls.length) {
-    text += `Resolution Discussion:\n${'-'.repeat(30)}\n`;
-    chatEls.forEach(el => { text += el.textContent + '\n\n'; });
-  }
-  const blob = new Blob([text], { type:'text/plain' });
+  const lines = [
+    'CONCORDIA — Mediation Summary',
+    '='.repeat(42),
+    '',
+    `Date: ${new Date().toLocaleDateString()}`,
+    `Case Type: ${config.caseType}`,
+    `Mediator Style: ${config.mediatorStyle}`,
+    `Party 1: ${config.partyAName}`,
+    `Party 2: ${config.partyBName}`,
+    '',
+    `Health Score: ${healthData?.score ?? 'N/A'}%`,
+    '',
+  ];
+  if (graphData?.title) lines.push(`Case Title: ${graphData.title}`, '');
+  if (graphData?.summary) lines.push(`Summary: ${graphData.summary}`, '');
+  const ents = graphData?.entities || {};
+  lines.push('Ontology:', '-'.repeat(20));
+  Object.entries(ents).forEach(([k, v]) => {
+    if (Array.isArray(v) && v.length) {
+      lines.push(`\n${k.toUpperCase()} (${v.length}):`);
+      v.forEach(e => lines.push(`  • ${e.name || e.description || JSON.stringify(e)}`));
+    }
+  });
+  lines.push('', 'Resolution Conversation:', '-'.repeat(20));
+  document.querySelectorAll('#resChat > div').forEach(el => {
+    const role = el.dataset.role;
+    const body = el.querySelector('.rc-body')?.textContent || el.textContent;
+    lines.push(`[${role}] ${body}`, '');
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `concordia-summary-${Date.now()}.txt`;
+  a.download = `concordia-${config.partyAName.replace(/\s/g,'-')}-${Date.now()}.txt`;
   a.click();
 }
 
-// ==================== UPLOAD ====================
-function showUploadModal() { document.getElementById('uploadModal').classList.remove('hidden'); }
-function closeUploadModal() { document.getElementById('uploadModal').classList.add('hidden'); }
+// =====================================================================
+// UPLOAD
+// =====================================================================
+function showUpload() { document.getElementById('uploadModal').classList.remove('hidden'); }
+function closeUpload() { document.getElementById('uploadModal').classList.add('hidden'); }
 
 async function submitUpload() {
-  const name = document.getElementById('uploadDocName').value.trim();
-  const content = document.getElementById('uploadDocContent').value.trim();
+  const name = document.getElementById('upName').value.trim() || 'Document';
+  const content = document.getElementById('upContent').value.trim();
   if (!content) return;
-  closeUploadModal();
-  addSystemMessage(`Ingesting document: ${name || 'Untitled'}...`);
+  closeUpload();
+  addSysMsg(`📄 Ingesting: ${name}...`);
   try {
     const r = await fetch('/api/upload', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name || 'Untitled', content, party: currentParty })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ name, content, party: currentParty || 'party_a' }),
     });
     if (r.ok) {
       const data = await r.json();
-      addSystemMessage(`Document ingested: ${data.summary || 'Processed successfully'}`);
-      refreshGraph();
+      addSysMsg(`✓ Ingested: ${data.summary || 'processed'}`);
+      if (data.graph) { graphData = data.graph; renderGraph(data.graph); }
+      if (data.health) { healthData = data.health; renderInfo(data.graph || graphData, data.health); updateHdrProgress(data.health); checkResolveBtn(data.health); }
     } else {
-      showError('Upload failed');
+      showErr('Upload failed — check your API key');
     }
-  } catch(e) { showError('Upload error: ' + e.message); }
-  document.getElementById('uploadDocName').value = '';
-  document.getElementById('uploadDocContent').value = '';
+  } catch(e) { showErr('Upload error: ' + e.message); }
+  document.getElementById('upName').value = '';
+  document.getElementById('upContent').value = '';
 }
 
-// ==================== MINI CONFIG ====================
-function toggleMiniConfig() {
-  // Simple: cycle through styles on click
-  const styles = DEFAULT_STYLES;
-  const idx = styles.findIndex(s => s.id === config.mediatorStyle);
-  const next = styles[(idx + 1) % styles.length];
+// =====================================================================
+// MISC
+// =====================================================================
+function cycleStyle() {
+  const idx = STYLES.findIndex(s => s.id === config.mediatorStyle);
+  const next = STYLES[(idx + 1) % STYLES.length];
   config.mediatorStyle = next.id;
-  document.getElementById('headerConfig').textContent = `${next.icon}${next.id} / ${config.caseType}`;
-  fetch('/api/configure', { method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({style:next.id, case_type:config.caseType}) }).catch(() => {});
+  updateHdrCfg();
+  fetch('/api/configure', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ style: next.id, case_type: config.caseType }) }).catch(() => {});
 }
 
-// ==================== RESET ====================
-function resetMediation() {
-  if (ws) { ws.onclose = null; ws.close(); ws = null; }
-  sessions = {};
-  currentParty = null;
-  partyAHasMessage = false;
-  currentGraph = {};
-  currentHealth = {};
-  currentAgentBubble = null;
-  toolNotifCount = 0;
-  nodePositions = {};
-  if (simulation) simulation.stop();
-  document.getElementById('chatMessages').innerHTML = '';
-  document.getElementById('tabPartyB').disabled = true;
-  showScreen('setup');
+function doReset() {
+  if (!confirm('Reset mediation? All data will be cleared.')) return;
+  if (ws) { ws.onclose = null; try { ws.close(); } catch(e){} ws = null; }
+  sessions = {}; partyASpoke = false; currentParty = null;
+  graphData = {}; healthData = {}; agentBubble = null; toolCount = 0; nodePositions = {};
+  if (sim) sim.stop();
+  fetch('/api/reset', { method:'POST' }).catch(() => {});
+  document.getElementById('chatMsgs').innerHTML = '';
+  document.getElementById('tabB').disabled = true;
+  goTo('setup');
 }
 
-// ==================== UTILS ====================
-function escHtml(s) {
+// HTML escape
+function h(s) {
   const d = document.createElement('div');
-  d.textContent = s || '';
+  d.textContent = String(s ?? '');
   return d.innerHTML;
 }
 </script>
