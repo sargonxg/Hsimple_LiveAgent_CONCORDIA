@@ -1,0 +1,27 @@
+# ── CONCORDIA — Local Development ────────────────────────────────────────────
+# Run locally: docker compose up
+# The app is at http://localhost:8080
+
+version: "3.9"
+
+services:
+  concordia:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI:-FALSE}
+      - CONCORDIA_MODEL=${CONCORDIA_MODEL:-gemini-2.0-flash-live-001}
+      - CONCORDIA_VOICE=${CONCORDIA_VOICE:-Aoede}
+      - PORT=8080
+    volumes:
+      # Hot-reload: mount source for development
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

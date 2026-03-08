@@ -1,5 +1,1881 @@
-<!DOCTYPE html><html><head><title>CONCORDIA</title></head>
-<body style="background:#0a0a0f;color:#e0e0e0;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column">
-<h1 style="color:#2abfac;letter-spacing:6px">CONCORDIA</h1>
-<p style="color:#5a6577">Live AI Mediation Agent — Loading...</p>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONCORDIA — AI Mediation</title>
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --surface2: #1a1a26;
+  --border: #2a2a3a;
+  --accent: #2abfac;
+  --accent2: #7b6cf6;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --party1: #2abfac;
+  --party2: #7b6cf6;
+  --agent: #f59e0b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  color: var(--accent);
+}
+
+.header-sub {
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: background 0.3s;
+}
+.status-dot.connected { background: var(--success); box-shadow: 0 0 6px var(--success); }
+.status-dot.error { background: var(--danger); }
+
+/* ── Main layout ── */
+.main {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  grid-template-rows: 1fr;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* ── Left Panel ── */
+.left-panel {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-section {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+/* Party switcher */
+.party-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.party-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.party-btn[data-party="party1"].active {
+  border-color: var(--party1);
+  background: rgba(42, 191, 172, 0.1);
+  color: var(--party1);
+}
+
+.party-btn[data-party="party2"].active {
+  border-color: var(--party2);
+  background: rgba(123, 108, 246, 0.1);
+  color: var(--party2);
+}
+
+/* Style + Case type selects */
+select {
+  width: 100%;
+  padding: 7px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2364748b' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+select:focus { outline: none; border-color: var(--accent); }
+
+/* Objective textarea */
+textarea {
+  width: 100%;
+  padding: 8px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  resize: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+textarea:focus { outline: none; border-color: var(--accent); }
+textarea::placeholder { color: var(--muted); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { filter: brightness(1.1); }
+.btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid var(--danger); }
+.btn-danger:hover { background: rgba(239,68,68,0.25); }
+.btn-full { width: 100%; }
+
+/* Graph stats */
+.graph-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+
+.stat-chip {
+  background: var(--surface2);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid var(--border);
+}
+
+.stat-chip span:first-child { color: var(--muted); }
+.stat-chip span:last-child { font-weight: 700; color: var(--accent); }
+
+/* Health bar */
+.health-bar-wrap {
+  margin-top: 8px;
+}
+
+.health-score {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.health-score strong { color: var(--accent); }
+
+.health-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.health-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease, background 0.5s;
+  background: var(--muted);
+}
+
+.health-bar-fill.low { background: var(--danger); }
+.health-bar-fill.mid { background: var(--warn); }
+.health-bar-fill.high { background: var(--success); }
+
+/* Gaps list */
+.gaps-list {
+  max-height: 120px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.gap-item {
+  font-size: 11px;
+  color: var(--warn);
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.gap-item::before { content: "!"; flex-shrink: 0; color: var(--warn); }
+
+/* API key input */
+.key-row {
+  display: flex;
+  gap: 6px;
+}
+
+input[type="password"], input[type="text"] {
+  flex: 1;
+  padding: 7px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+input:focus { outline: none; border-color: var(--accent); }
+input::placeholder { color: var(--muted); }
+
+/* Left panel scroll */
+.left-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ── Center Panel (Chat) ── */
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 80%;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message.party1 { align-self: flex-end; }
+.message.party2 { align-self: flex-start; }
+.message.agent { align-self: flex-start; max-width: 90%; }
+.message.system { align-self: center; max-width: 70%; }
+.message.error { align-self: center; max-width: 80%; }
+
+.msg-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+  padding: 0 2px;
+}
+
+.message.party1 .msg-label { color: var(--party1); text-align: right; }
+.message.party2 .msg-label { color: var(--party2); }
+.message.agent .msg-label { color: var(--agent); }
+
+.msg-bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.message.party1 .msg-bubble {
+  background: rgba(42,191,172,0.12);
+  border: 1px solid rgba(42,191,172,0.25);
+  border-bottom-right-radius: 4px;
+}
+
+.message.party2 .msg-bubble {
+  background: rgba(123,108,246,0.12);
+  border: 1px solid rgba(123,108,246,0.25);
+  border-bottom-left-radius: 4px;
+}
+
+.message.agent .msg-bubble {
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-bottom-left-radius: 4px;
+}
+
+.message.system .msg-bubble {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.message.error .msg-bubble {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: var(--danger);
+}
+
+/* Tool call pill */
+.tool-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(123,108,246,0.15);
+  border: 1px solid rgba(123,108,246,0.3);
+  border-radius: 100px;
+  font-size: 10px;
+  color: var(--accent2);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-self: flex-start;
+}
+
+.tool-pill::before { content: "⚙"; flex-shrink: 0; }
+
+/* Typing indicator */
+.typing-indicator {
+  display: none;
+  align-self: flex-start;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.typing-indicator.active { display: flex; gap: 4px; }
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: bounce 1.2s infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* Chat input area */
+.chat-input-area {
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+#chat-input {
+  flex: 1;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 13px;
+  resize: none;
+  max-height: 120px;
+  min-height: 42px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+#chat-input:focus { outline: none; border-color: var(--accent); }
+
+.send-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  color: #000;
+  font-size: 16px;
+}
+
+.send-btn:hover { filter: brightness(1.1); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Audio btn */
+.audio-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.audio-btn.recording {
+  background: rgba(239,68,68,0.2);
+  border-color: var(--danger);
+  color: var(--danger);
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+
+/* Upload row */
+.upload-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.upload-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Phase badge */
+.phase-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.phase-badge.arrive { color: var(--muted); }
+.phase-badge.structure { color: var(--party1); border-color: var(--party1); background: rgba(42,191,172,0.1); }
+.phase-badge.verify { color: var(--warn); border-color: var(--warn); background: rgba(245,158,11,0.1); }
+.phase-badge.resolve { color: var(--success); border-color: var(--success); background: rgba(34,197,94,0.1); }
+
+/* ── Right Panel ── */
+.right-panel {
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.right-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.right-tab {
+  flex: 1;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.right-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.right-tab:hover { color: var(--text); }
+
+.right-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Graph nodes display */
+.node-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.node-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  animation: fadeIn 0.3s;
+}
+
+.node-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.node-card-title { font-weight: 600; }
+
+.node-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.node-card.actor .node-type-badge { background: rgba(42,191,172,0.2); color: var(--accent); }
+.node-card.claim .node-type-badge { background: rgba(239,68,68,0.2); color: var(--danger); }
+.node-card.interest .node-type-badge { background: rgba(34,197,94,0.2); color: var(--success); }
+.node-card.constraint .node-type-badge { background: rgba(245,158,11,0.2); color: var(--warn); }
+.node-card.leverage .node-type-badge { background: rgba(123,108,246,0.2); color: var(--accent2); }
+
+.node-card-body { color: var(--muted); font-size: 11px; line-height: 1.4; }
+
+.party-chip {
+  display: inline-block;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-top: 3px;
+}
+
+.party-chip.party1 { background: rgba(42,191,172,0.15); color: var(--party1); }
+.party-chip.party2 { background: rgba(123,108,246,0.15); color: var(--party2); }
+
+/* Theories */
+.theory-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  animation: fadeIn 0.3s;
+}
+
+.theory-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.theory-name { font-weight: 600; font-size: 12px; }
+.theory-school { font-size: 10px; color: var(--muted); }
+.theory-score {
+  background: rgba(42,191,172,0.15);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.theory-short { font-size: 11px; color: var(--accent2); font-style: italic; margin-bottom: 6px; }
+
+.theory-principles {
+  list-style: none;
+  margin-bottom: 4px;
+}
+
+.theory-principles li {
+  font-size: 11px;
+  color: var(--muted);
+  padding: 2px 0;
+  border-left: 2px solid var(--border);
+  padding-left: 8px;
+}
+
+/* Resolution report */
+.resolution-section {
+  margin-bottom: 14px;
+}
+
+.resolution-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.shared-interest-chip {
+  display: inline-block;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.25);
+  color: var(--success);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  margin: 2px;
+}
+
+.broken-commitment-chip {
+  display: inline-block;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: var(--danger);
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  margin: 2px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.empty-state .icon { font-size: 28px; margin-bottom: 8px; }
+
+/* Canvas for graph viz */
+#graph-canvas {
+  width: 100%;
+  background: var(--surface2);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: grab;
+}
+
+#graph-canvas:active { cursor: grabbing; }
+
+/* Transcript panel */
+.transcript-entry {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.transcript-entry .t-role {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
+.transcript-entry .t-role.user { color: var(--party1); }
+.transcript-entry .t-role.model { color: var(--agent); }
+
+/* Progress phases bar */
+.phase-progress {
+  display: flex;
+  gap: 2px;
+  margin: 8px 0;
+}
+
+.phase-step {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.5s;
+}
+
+.phase-step.done { background: var(--accent); }
+.phase-step.current { background: var(--warn); }
+
+/* Document upload area */
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  margin-top: 6px;
+}
+
+.upload-area:hover { border-color: var(--accent); }
+.upload-area.dragover { border-color: var(--accent); background: rgba(42,191,172,0.05); }
+.upload-area-text { font-size: 11px; color: var(--muted); }
+
+/* Objective display */
+.objective-display {
+  background: rgba(42,191,172,0.06);
+  border: 1px solid rgba(42,191,172,0.2);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--accent);
+  margin-top: 6px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+  .left-panel { display: none; }
+  .right-panel { max-height: 300px; }
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  width: 460px;
+  max-width: 95vw;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.modal-body { margin-bottom: 16px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; }
+
+.label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  display: block;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CONCORDIA</div>
+  <div class="header-sub">Live AI Mediation</div>
+  <div id="phase-display" class="phase-badge arrive">arrive</div>
+  <div class="header-right">
+    <span id="status-text" style="font-size:11px;color:var(--muted)">Disconnected</span>
+    <div id="status-dot" class="status-dot"></div>
+    <button class="btn btn-danger" onclick="resetSession()" style="padding:5px 10px;font-size:11px">Reset</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="left-scroll">
+
+      <!-- API Key -->
+      <div class="panel-section">
+        <div class="panel-section-title">Gemini API Key</div>
+        <div class="key-row">
+          <input type="password" id="api-key" placeholder="AIza..." autocomplete="off">
+          <button class="btn btn-primary" onclick="saveApiKey()">Set</button>
+        </div>
+        <div id="key-status" style="font-size:10px;color:var(--muted);margin-top:4px"></div>
+      </div>
+
+      <!-- Party -->
+      <div class="panel-section">
+        <div class="panel-section-title">Speaking As</div>
+        <div class="party-btns">
+          <button class="party-btn active" data-party="party1" onclick="setParty('party1')">Party 1</button>
+          <button class="party-btn" data-party="party2" onclick="setParty('party2')">Party 2</button>
+        </div>
+      </div>
+
+      <!-- Configuration -->
+      <div class="panel-section">
+        <div class="panel-section-title">Configuration</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div>
+            <label class="label">Mediator Style</label>
+            <select id="style-select" onchange="applyConfig()"></select>
+          </div>
+          <div>
+            <label class="label">Case Type</label>
+            <select id="case-type-select" onchange="applyConfig()"></select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objective -->
+      <div class="panel-section">
+        <div class="panel-section-title">Mediation Objective</div>
+        <textarea id="objective-input" rows="3" placeholder="e.g. Reach a mutually agreeable exit from the partnership by end of quarter..."></textarea>
+        <button class="btn btn-secondary btn-full" style="margin-top:6px" onclick="setObjective()">Set Objective</button>
+        <div id="objective-display" class="objective-display" style="display:none"></div>
+      </div>
+
+      <!-- Graph Health -->
+      <div class="panel-section">
+        <div class="panel-section-title">Graph Health</div>
+        <div class="health-bar-wrap">
+          <div class="health-score">
+            <span id="health-label">Score</span>
+            <strong id="health-score-val">0%</strong>
+          </div>
+          <div class="health-bar">
+            <div id="health-bar-fill" class="health-bar-fill" style="width:0%"></div>
+          </div>
+          <div class="phase-progress">
+            <div id="step-arrive" class="phase-step current"></div>
+            <div id="step-structure" class="phase-step"></div>
+            <div id="step-verify" class="phase-step"></div>
+            <div id="step-resolve" class="phase-step"></div>
+          </div>
+        </div>
+        <div id="gaps-list" class="gaps-list"></div>
+      </div>
+
+      <!-- Graph Stats -->
+      <div class="panel-section">
+        <div class="panel-section-title">Graph Stats</div>
+        <div class="graph-stats" id="graph-stats">
+          <div class="stat-chip"><span>Actors</span><span id="s-actors">0</span></div>
+          <div class="stat-chip"><span>Claims</span><span id="s-claims">0</span></div>
+          <div class="stat-chip"><span>Interests</span><span id="s-interests">0</span></div>
+          <div class="stat-chip"><span>Constraints</span><span id="s-constraints">0</span></div>
+          <div class="stat-chip"><span>Leverage</span><span id="s-leverages">0</span></div>
+          <div class="stat-chip"><span>Commitments</span><span id="s-commitments">0</span></div>
+          <div class="stat-chip"><span>Events</span><span id="s-events">0</span></div>
+          <div class="stat-chip"><span>Narratives</span><span id="s-narratives">0</span></div>
+        </div>
+      </div>
+
+      <!-- Document Upload -->
+      <div class="panel-section">
+        <div class="panel-section-title">Upload Document</div>
+        <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+          <div class="upload-area-text">Drop a file or click<br><small>Text, PDF (text), contracts, emails</small></div>
+        </div>
+        <input type="file" id="file-input" style="display:none" accept=".txt,.md,.csv" onchange="handleFileUpload(event)">
+        <div style="margin-top:6px;display:flex;gap:6px">
+          <input type="text" id="doc-name" placeholder="Document name" style="flex:1">
+          <button class="btn btn-secondary" onclick="uploadText()">Text</button>
+        </div>
+      </div>
+
+    </div><!-- end left-scroll -->
+  </div><!-- end left-panel -->
+
+  <!-- CENTER PANEL -->
+  <div class="center-panel">
+    <div id="chat-messages" class="chat-messages">
+      <div class="message system">
+        <div class="msg-bubble">
+          Welcome to CONCORDIA. Select a mediator style, enter your API key, and click "Connect" to begin your mediation session.
+        </div>
+      </div>
+    </div>
+
+    <div class="typing-indicator" id="typing-indicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="chat-input-row">
+        <button id="audio-btn" class="audio-btn" onclick="toggleAudio()" title="Hold to speak">🎤</button>
+        <textarea id="chat-input" placeholder="Type your message... (Enter to send, Shift+Enter for new line)" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button id="connect-btn" class="send-btn" onclick="handleConnect()" title="Connect">⚡</button>
+        <button id="send-btn" class="send-btn" onclick="sendMessage()" title="Send" style="display:none">➤</button>
+      </div>
+      <div id="audio-level-bar" style="height:3px;background:var(--border);border-radius:2px;display:none">
+        <div id="audio-level-fill" style="height:100%;background:var(--danger);width:0%;transition:width 0.1s;border-radius:2px"></div>
+      </div>
+    </div>
+  </div><!-- end center-panel -->
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="right-tabs">
+      <button class="right-tab active" onclick="switchTab('actors')" id="tab-actors">Actors</button>
+      <button class="right-tab" onclick="switchTab('graph')" id="tab-graph">Graph</button>
+      <button class="right-tab" onclick="switchTab('theories')" id="tab-theories">Theories</button>
+      <button class="right-tab" onclick="switchTab('resolve')" id="tab-resolve">Resolve</button>
+    </div>
+
+    <div class="right-content">
+      <!-- Actors tab -->
+      <div id="pane-actors" class="tab-pane active">
+        <div id="actors-list" class="node-list">
+          <div class="empty-state">
+            <div class="icon">🎭</div>
+            <div>Actors, claims, and interests will appear here as the conversation builds the conflict graph.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graph visualization tab -->
+      <div id="pane-graph" class="tab-pane">
+        <canvas id="graph-canvas" height="340"></canvas>
+        <div style="margin-top:8px">
+          <div id="graph-summary" style="font-size:11px;color:var(--muted);line-height:1.6;white-space:pre-wrap;font-family:monospace"></div>
+        </div>
+      </div>
+
+      <!-- Theories tab -->
+      <div id="pane-theories" class="tab-pane">
+        <div id="theories-list">
+          <div class="empty-state">
+            <div class="icon">📚</div>
+            <div>Conflict resolution theories will be matched here as the graph builds.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resolve tab -->
+      <div id="pane-resolve" class="tab-pane">
+        <div id="resolve-content">
+          <div class="empty-state">
+            <div class="icon">🤝</div>
+            <div>Resolution analysis and common ground proposals will appear here when the graph is sufficiently complete.</div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-full" style="margin-top:8px" onclick="fetchCommonGround()">Analyze Common Ground</button>
+      </div>
+    </div>
+  </div><!-- end right-panel -->
+
+</div><!-- end main -->
+
+<!-- Reset Modal -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <div class="modal-title">Reset Session</div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text);margin-bottom:12px">This will clear the entire conflict graph and all conversation history.</p>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer">
+        <input type="checkbox" id="keep-config-cb"> Keep current configuration (style, case type, objective)
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReset()">Reset</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+let ws = null;
+let connected = false;
+let activeParty = "party1";
+let sessionId = "s_" + Math.random().toString(36).slice(2, 10);
+let currentGraph = null;
+let mediaRecorder = null;
+let audioStream = null;
+let isRecording = false;
+let audioContext = null;
+let analyserNode = null;
+let levelAnimFrame = null;
+
+// ── WebSocket ────────────────────────────────────────────────────────────────
+function handleConnect() {
+  if (connected) {
+    disconnect();
+  } else {
+    connect();
+  }
+}
+
+function connect() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const url = `${proto}://${location.host}/ws/${activeParty}/${sessionId}`;
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    connected = true;
+    setStatus("connected", "Connected");
+    document.getElementById("connect-btn").style.display = "none";
+    document.getElementById("send-btn").style.display = "flex";
+    addMessage("system", "Connected to CONCORDIA. The agent will introduce itself momentarily.");
+    fetchStyles();
+    fetchCaseTypes();
+  };
+
+  ws.onmessage = (event) => {
+    if (event.data instanceof Blob) {
+      playAudioBlob(event.data);
+      return;
+    }
+    try {
+      const msg = JSON.parse(event.data);
+      handleWsMessage(msg);
+    } catch(e) {}
+  };
+
+  ws.onerror = () => setStatus("error", "Error");
+
+  ws.onclose = () => {
+    connected = false;
+    setStatus("", "Disconnected");
+    document.getElementById("connect-btn").style.display = "flex";
+    document.getElementById("send-btn").style.display = "none";
+    document.getElementById("connect-btn").title = "Connect";
+    document.getElementById("connect-btn").textContent = "⚡";
+  };
+}
+
+function disconnect() {
+  if (ws) ws.close();
+}
+
+function handleWsMessage(msg) {
+  hideTyping();
+  switch (msg.type) {
+    case "text":
+      addMessage("agent", msg.content, msg.author);
+      break;
+
+    case "tool_call":
+      addToolCall(msg.tool, msg.args);
+      showTyping();
+      break;
+
+    case "graph_update":
+      updateGraph(msg.graph, msg.health);
+      if (msg.objective) showObjective(msg.objective);
+      break;
+
+    case "transcript":
+      addTranscript(msg.role, msg.content);
+      break;
+
+    case "error":
+      addMessage("error", msg.content);
+      break;
+  }
+}
+
+// ── Send ─────────────────────────────────────────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById("chat-input");
+  const text = input.value.trim();
+  if (!text || !connected) return;
+
+  addMessage(activeParty, text);
+  ws.send(JSON.stringify({ type: "text", content: text }));
+  input.value = "";
+  autoResize(input);
+  showTyping();
+}
+
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+
+// ── Messages ─────────────────────────────────────────────────────────────────
+function addMessage(type, content, author) {
+  const container = document.getElementById("chat-messages");
+  const div = document.createElement("div");
+  div.className = `message ${type}`;
+
+  let label = "";
+  if (type === "party1") label = "Party 1";
+  else if (type === "party2") label = "Party 2";
+  else if (type === "agent") label = author || "CONCORDIA";
+
+  div.innerHTML = `
+    ${label ? `<div class="msg-label">${label}</div>` : ""}
+    <div class="msg-bubble">${escHtml(content)}</div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function addToolCall(tool, args) {
+  const container = document.getElementById("chat-messages");
+  const div = document.createElement("div");
+  div.className = "message agent";
+  const argStr = Object.keys(args).length
+    ? " · " + Object.entries(args).slice(0,2).map(([k,v]) => `${k}=${JSON.stringify(v).slice(0,30)}`).join(", ")
+    : "";
+  div.innerHTML = `<div class="tool-pill">${tool}${argStr}</div>`;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function addTranscript(role, content) {
+  const pane = document.getElementById("pane-graph");
+  const existing = pane.querySelector(".transcript-list");
+  let list = existing;
+  if (!list) {
+    list = document.createElement("div");
+    list.className = "transcript-list";
+    list.style.marginTop = "8px";
+    pane.appendChild(list);
+  }
+  const entry = document.createElement("div");
+  entry.className = "transcript-entry";
+  entry.innerHTML = `<div class="t-role ${role}">${role === "user" ? "You" : "Agent"}</div><div>${escHtml(content)}</div>`;
+  list.prepend(entry);
+}
+
+function showTyping() {
+  document.getElementById("typing-indicator").classList.add("active");
+  const c = document.getElementById("chat-messages");
+  c.scrollTop = c.scrollHeight;
+}
+
+function hideTyping() {
+  document.getElementById("typing-indicator").classList.remove("active");
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+function setStatus(cls, text) {
+  const dot = document.getElementById("status-dot");
+  dot.className = "status-dot " + cls;
+  document.getElementById("status-text").textContent = text;
+}
+
+// ── Party ─────────────────────────────────────────────────────────────────────
+function setParty(party) {
+  activeParty = party;
+  document.querySelectorAll(".party-btn").forEach(b => b.classList.remove("active"));
+  document.querySelector(`[data-party="${party}"]`).classList.add("active");
+  if (connected) {
+    disconnect();
+    sessionId = "s_" + Math.random().toString(36).slice(2, 10);
+    setTimeout(connect, 300);
+  }
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
+async function fetchStyles() {
+  try {
+    const r = await fetch("/api/styles");
+    const data = await r.json();
+    const sel = document.getElementById("style-select");
+    sel.innerHTML = "";
+    for (const [k, v] of Object.entries(data)) {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = `${v.icon || ""} ${v.name}`;
+      sel.appendChild(opt);
+    }
+  } catch(e) {}
+}
+
+async function fetchCaseTypes() {
+  try {
+    const r = await fetch("/api/case-types");
+    const data = await r.json();
+    const sel = document.getElementById("case-type-select");
+    sel.innerHTML = "";
+    for (const [k, v] of Object.entries(data)) {
+      const opt = document.createElement("option");
+      opt.value = k;
+      opt.textContent = `${v.icon || ""} ${v.name}`;
+      sel.appendChild(opt);
+    }
+  } catch(e) {}
+}
+
+async function applyConfig() {
+  const style = document.getElementById("style-select").value;
+  const caseType = document.getElementById("case-type-select").value;
+  const objective = document.getElementById("objective-input").value;
+  try {
+    await fetch("/api/configure", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mediator_style: style, case_type: caseType, objective }),
+    });
+    addMessage("system", `Configuration updated: ${style} style, ${caseType} case type.`);
+  } catch(e) {}
+}
+
+async function setObjective() {
+  const obj = document.getElementById("objective-input").value.trim();
+  if (!obj) return;
+  try {
+    await fetch("/api/set-objective", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ objective: obj }),
+    });
+    showObjective(obj);
+    addMessage("system", `Mediation objective set: "${obj.slice(0,80)}${obj.length>80?"...":""}"`);
+  } catch(e) {}
+}
+
+function showObjective(obj) {
+  const d = document.getElementById("objective-display");
+  d.style.display = "block";
+  d.textContent = "Objective: " + obj;
+}
+
+// ── API Key ───────────────────────────────────────────────────────────────────
+async function saveApiKey() {
+  const key = document.getElementById("api-key").value.trim();
+  if (!key) return;
+  const r = await fetch("/api/set-key", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key }),
+  });
+  const data = await r.json();
+  document.getElementById("key-status").textContent = data.status === "ok" ? "Key saved" : "Error";
+}
+
+// ── Graph Update ──────────────────────────────────────────────────────────────
+function updateGraph(graph, health) {
+  currentGraph = graph;
+
+  // Update phase
+  const phase = graph.phase || "arrive";
+  const phaseBadge = document.getElementById("phase-display");
+  phaseBadge.className = `phase-badge ${phase}`;
+  phaseBadge.textContent = phase;
+
+  // Phase progress steps
+  const phases = ["arrive", "structure", "verify", "resolve"];
+  const idx = phases.indexOf(phase);
+  phases.forEach((p, i) => {
+    const el = document.getElementById(`step-${p}`);
+    if (!el) return;
+    el.className = "phase-step" + (i < idx ? " done" : i === idx ? " current" : "");
+  });
+
+  // Health
+  if (health) {
+    const score = health.score || 0;
+    document.getElementById("health-score-val").textContent = score + "%";
+    const fill = document.getElementById("health-bar-fill");
+    fill.style.width = score + "%";
+    fill.className = "health-bar-fill " + (score < 40 ? "low" : score < 75 ? "mid" : "high");
+    // Gaps
+    const gapsList = document.getElementById("gaps-list");
+    gapsList.innerHTML = "";
+    (health.gaps || []).forEach(g => {
+      const d = document.createElement("div");
+      d.className = "gap-item";
+      d.textContent = g;
+      gapsList.appendChild(d);
+    });
+  }
+
+  // Stats
+  const counts = {
+    actors: graph.actors?.length || 0,
+    claims: graph.claims?.length || 0,
+    interests: graph.interests?.length || 0,
+    constraints: graph.constraints?.length || 0,
+    leverages: graph.leverages?.length || 0,
+    commitments: graph.commitments?.length || 0,
+    events: graph.events?.length || 0,
+    narratives: graph.narratives?.length || 0,
+  };
+  for (const [k, v] of Object.entries(counts)) {
+    const el = document.getElementById(`s-${k}`);
+    if (el) el.textContent = v;
+  }
+
+  // Actors pane
+  updateActorsPane(graph);
+
+  // Graph viz
+  renderGraphCanvas(graph);
+
+  // Theories (fetch if we have data)
+  if ((graph.actors?.length || 0) >= 1) fetchTheories();
+}
+
+function updateActorsPane(graph) {
+  const list = document.getElementById("actors-list");
+  list.innerHTML = "";
+
+  // Actors
+  (graph.actors || []).forEach(a => {
+    const card = document.createElement("div");
+    card.className = "node-card actor";
+    card.innerHTML = `
+      <div class="node-card-header">
+        <div class="node-card-title">${escHtml(a.name)}</div>
+        <div class="node-type-badge">actor</div>
+      </div>
+      <div class="node-card-body">
+        ${escHtml(a.role_in_conflict || a.description || "")}<br>
+        <span class="party-chip ${a.contributed_by}">${a.contributed_by || "default"}</span>
+      </div>
+    `;
+    list.appendChild(card);
+
+    // Claims for this actor
+    const claims = (graph.claims || []).filter(c => c.source_actor_id === a.id);
+    claims.forEach(c => {
+      const cc = document.createElement("div");
+      cc.className = "node-card claim";
+      cc.style.marginLeft = "8px";
+      cc.innerHTML = `
+        <div class="node-card-header">
+          <div class="node-card-title" style="font-size:11px">${c.claim_type}</div>
+          <div class="node-type-badge">claim</div>
+        </div>
+        <div class="node-card-body">${escHtml(c.content)}</div>
+      `;
+      list.appendChild(cc);
+    });
+
+    // Interests for this actor
+    const interests = (graph.interests || []).filter(i => i.actor_id === a.id);
+    interests.forEach(i => {
+      const ic = document.createElement("div");
+      ic.className = "node-card interest";
+      ic.style.marginLeft = "8px";
+      ic.innerHTML = `
+        <div class="node-card-header">
+          <div class="node-card-title" style="font-size:11px">${i.interest_type} (p${i.priority})</div>
+          <div class="node-type-badge">interest</div>
+        </div>
+        <div class="node-card-body">${escHtml(i.description)}</div>
+      `;
+      list.appendChild(ic);
+    });
+  });
+
+  if (list.children.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🎭</div><div>Actors will appear here as the conversation builds the conflict graph.</div></div>`;
+  }
+}
+
+// ── Graph Canvas ──────────────────────────────────────────────────────────────
+function renderGraphCanvas(graph) {
+  const canvas = document.getElementById("graph-canvas");
+  if (!canvas) return;
+  const W = canvas.offsetWidth || 280;
+  canvas.width = W;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, W, canvas.height);
+
+  const actors = graph.actors || [];
+  const claims = graph.claims || [];
+  const interests = graph.interests || [];
+
+  if (actors.length === 0) {
+    ctx.fillStyle = "#64748b";
+    ctx.font = "12px system-ui";
+    ctx.textAlign = "center";
+    ctx.fillText("Graph will appear here as data is collected", W/2, 170);
+    return;
+  }
+
+  const nodes = {};
+  const all = [...actors, ...claims.slice(0,8), ...interests.slice(0,8)];
+  const total = all.length;
+  const cx = W/2, cy = 170, R = 120;
+
+  // Position in circle
+  all.forEach((n, idx) => {
+    const angle = (2 * Math.PI * idx / total) - Math.PI/2;
+    const r = actors.includes(n) ? R * 0.5 : R;
+    nodes[n.id] = {
+      x: cx + r * Math.cos(angle),
+      y: cy + r * Math.sin(angle),
+      node: n,
+      type: actors.includes(n) ? "actor" : claims.includes(n) ? "claim" : "interest",
+    };
+  });
+
+  const colors = {
+    actor: "#2abfac",
+    claim: "#ef4444",
+    interest: "#22c55e",
+  };
+
+  // Draw edges
+  ctx.strokeStyle = "rgba(42,191,172,0.15)";
+  ctx.lineWidth = 1;
+  (graph.edges || []).forEach(e => {
+    const s = nodes[e.source_id];
+    const t = nodes[e.target_id];
+    if (s && t) {
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(t.x, t.y);
+      ctx.stroke();
+    }
+  });
+
+  // Draw nodes
+  for (const [id, {x, y, node, type}] of Object.entries(nodes)) {
+    const color = colors[type];
+    const r = type === "actor" ? 18 : 10;
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 2*Math.PI);
+    ctx.fillStyle = color + "22";
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = color;
+    ctx.font = type === "actor" ? "bold 10px system-ui" : "9px system-ui";
+    ctx.textAlign = "center";
+    const label = (node.name || node.content || node.description || "").slice(0, 14);
+    ctx.fillText(label, x, y + r + 12);
+  }
+}
+
+// ── Theories ──────────────────────────────────────────────────────────────────
+async function fetchTheories() {
+  try {
+    const r = await fetch("/api/theories");
+    const theories = await r.json();
+    const list = document.getElementById("theories-list");
+    if (!theories.length) return;
+    list.innerHTML = "";
+    theories.forEach(t => {
+      const card = document.createElement("div");
+      card.className = "theory-card";
+      card.innerHTML = `
+        <div class="theory-card-header">
+          <div>
+            <div class="theory-name">${escHtml(t.name)}</div>
+            <div class="theory-school">${escHtml(t.school)}</div>
+          </div>
+          <div class="theory-score">★ ${t.score}</div>
+        </div>
+        <div class="theory-short">${escHtml(t.short)}</div>
+        <ul class="theory-principles">
+          ${(t.principles || []).map(p => `<li>${escHtml(p)}</li>`).join("")}
+        </ul>
+      `;
+      list.appendChild(card);
+    });
+  } catch(e) {}
+}
+
+// ── Common Ground ──────────────────────────────────────────────────────────────
+async function fetchCommonGround() {
+  try {
+    const r = await fetch("/api/common-ground");
+    const data = await r.json();
+    const content = document.getElementById("resolve-content");
+    content.innerHTML = "";
+
+    // Shared interests
+    const si = data.shared_interests || {};
+    const siSection = document.createElement("div");
+    siSection.className = "resolution-section";
+    siSection.innerHTML = `<div class="resolution-section-title">Shared Interests</div>`;
+    const keys = Object.keys(si);
+    if (keys.length) {
+      keys.forEach(type => {
+        const actors = si[type].map(e => e.actor).join(", ");
+        const chip = document.createElement("span");
+        chip.className = "shared-interest-chip";
+        chip.textContent = `${type}: ${actors}`;
+        siSection.appendChild(chip);
+      });
+    } else {
+      siSection.innerHTML += `<div style="font-size:11px;color:var(--muted)">No shared interests detected yet.</div>`;
+    }
+    content.appendChild(siSection);
+
+    // Broken commitments
+    const bc = data.broken_commitments || [];
+    const bcSection = document.createElement("div");
+    bcSection.className = "resolution-section";
+    bcSection.innerHTML = `<div class="resolution-section-title">Broken Commitments</div>`;
+    if (bc.length) {
+      bc.forEach(c => {
+        const chip = document.createElement("span");
+        chip.className = "broken-commitment-chip";
+        chip.textContent = `${c.from} → ${c.to}: ${c.description.slice(0,50)}`;
+        bcSection.appendChild(chip);
+      });
+    } else {
+      bcSection.innerHTML += `<div style="font-size:11px;color:var(--muted)">No broken commitments identified.</div>`;
+    }
+    content.appendChild(bcSection);
+
+    // Leverage balance
+    const lb = data.leverage_balance || {};
+    const lbSection = document.createElement("div");
+    lbSection.className = "resolution-section";
+    lbSection.innerHTML = `<div class="resolution-section-title">Leverage Balance</div>`;
+    const lbKeys = Object.keys(lb);
+    if (lbKeys.length) {
+      lbKeys.forEach(holder => {
+        const d = document.createElement("div");
+        d.style.cssText = "font-size:11px;color:var(--text);padding:3px 0;border-bottom:1px solid var(--border)";
+        d.textContent = `${holder}: ${lb[holder].total_strength} total strength`;
+        lbSection.appendChild(d);
+      });
+    } else {
+      lbSection.innerHTML += `<div style="font-size:11px;color:var(--muted)">No leverage mapped yet.</div>`;
+    }
+    content.appendChild(lbSection);
+
+    // CTA to resolver
+    if (connected) {
+      const cta = document.createElement("button");
+      cta.className = "btn btn-primary btn-full";
+      cta.style.marginTop = "10px";
+      cta.textContent = "Ask Agent for Resolution Paths";
+      cta.onclick = () => {
+        if (ws) {
+          ws.send(JSON.stringify({ type: "text", content: "Please analyze the conflict graph and propose 2-3 concrete resolution paths. Focus on shared interests and common ground." }));
+          addMessage(activeParty, "Please analyze the conflict graph and propose 2-3 concrete resolution paths.");
+          showTyping();
+          switchTab("actors");
+        }
+      };
+      content.appendChild(cta);
+    }
+
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll(".right-tab").forEach(t => t.classList.remove("active"));
+  document.querySelectorAll(".tab-pane").forEach(p => p.classList.remove("active"));
+  document.getElementById(`tab-${name}`).classList.add("active");
+  document.getElementById(`pane-${name}`).classList.add("active");
+  if (name === "graph" && currentGraph) renderGraphCanvas(currentGraph);
+}
+
+// ── File Upload ───────────────────────────────────────────────────────────────
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const text = e.target.result;
+    const name = file.name;
+    await sendDocumentToAgent(text, name);
+  };
+  reader.readAsText(file);
+}
+
+async function uploadText() {
+  const name = document.getElementById("doc-name").value || "Document";
+  const text = prompt("Paste the document text:");
+  if (!text) return;
+  await sendDocumentToAgent(text, name);
+}
+
+async function sendDocumentToAgent(text, name) {
+  try {
+    const r = await fetch("/api/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ party_id: activeParty, text, document_name: name }),
+    });
+    const data = await r.json();
+    addMessage("system", `Document "${name}" uploaded (${data.length || text.length} chars). Tell the agent to review it.`);
+    if (connected) {
+      const msg = `[DOCUMENT UPLOAD]\nName: ${name}\nContent:\n${text.slice(0, 4000)}`;
+      ws.send(JSON.stringify({ type: "text", content: msg }));
+      showTyping();
+    }
+  } catch(e) {
+    addMessage("error", "Failed to upload document.");
+  }
+}
+
+// ── Audio ─────────────────────────────────────────────────────────────────────
+async function toggleAudio() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  if (!connected) { addMessage("system", "Please connect first."); return; }
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: { sampleRate: 16000, channelCount: 1, echoCancellation: true } });
+    isRecording = true;
+    document.getElementById("audio-btn").classList.add("recording");
+    document.getElementById("audio-level-bar").style.display = "block";
+
+    // Level meter
+    audioContext = new AudioContext({ sampleRate: 16000 });
+    const source = audioContext.createMediaStreamSource(audioStream);
+    analyserNode = audioContext.createAnalyser();
+    analyserNode.fftSize = 256;
+    source.connect(analyserNode);
+    updateLevelMeter();
+
+    // PCM via ScriptProcessor
+    const processor = audioContext.createScriptProcessor(4096, 1, 1);
+    source.connect(processor);
+    processor.connect(audioContext.destination);
+    processor.onaudioprocess = (e) => {
+      if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+      const float32 = e.inputBuffer.getChannelData(0);
+      const int16 = new Int16Array(float32.length);
+      for (let i = 0; i < float32.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, float32[i] * 32768));
+      }
+      ws.send(int16.buffer);
+    };
+  } catch(e) {
+    addMessage("error", "Microphone access denied: " + e.message);
+  }
+}
+
+function stopRecording() {
+  isRecording = false;
+  if (audioStream) { audioStream.getTracks().forEach(t => t.stop()); audioStream = null; }
+  if (audioContext) { audioContext.close(); audioContext = null; }
+  if (levelAnimFrame) { cancelAnimationFrame(levelAnimFrame); levelAnimFrame = null; }
+  document.getElementById("audio-btn").classList.remove("recording");
+  document.getElementById("audio-level-bar").style.display = "none";
+  document.getElementById("audio-level-fill").style.width = "0%";
+}
+
+function updateLevelMeter() {
+  if (!isRecording || !analyserNode) return;
+  const buf = new Uint8Array(analyserNode.fftSize);
+  analyserNode.getByteTimeDomainData(buf);
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) sum += Math.abs(buf[i] - 128);
+  const level = Math.min(100, (sum / buf.length) * 6);
+  document.getElementById("audio-level-fill").style.width = level + "%";
+  levelAnimFrame = requestAnimationFrame(updateLevelMeter);
+}
+
+// ── Audio Playback ────────────────────────────────────────────────────────────
+const audioQueue = [];
+let isPlaying = false;
+
+function playAudioBlob(blob) {
+  audioQueue.push(blob);
+  if (!isPlaying) drainAudioQueue();
+}
+
+async function drainAudioQueue() {
+  if (!audioQueue.length) { isPlaying = false; return; }
+  isPlaying = true;
+  const blob = audioQueue.shift();
+  try {
+    const ac = new AudioContext({ sampleRate: 24000 });
+    const buf = await blob.arrayBuffer();
+    const int16 = new Int16Array(buf);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+    const ab = ac.createBuffer(1, float32.length, 24000);
+    ab.getChannelData(0).set(float32);
+    const src = ac.createBufferSource();
+    src.buffer = ab;
+    src.connect(ac.destination);
+    src.onended = () => { ac.close(); drainAudioQueue(); };
+    src.start();
+  } catch(e) { drainAudioQueue(); }
+}
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+function resetSession() {
+  document.getElementById("reset-modal").classList.add("open");
+}
+
+function closeModal() {
+  document.getElementById("reset-modal").classList.remove("open");
+}
+
+async function confirmReset() {
+  const keepConfig = document.getElementById("keep-config-cb").checked;
+  closeModal();
+  try {
+    await fetch("/api/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keep_config: keepConfig }),
+    });
+  } catch(e) {}
+
+  // Clear UI
+  document.getElementById("chat-messages").innerHTML = `
+    <div class="message system">
+      <div class="msg-bubble">Session reset. Ready for a new mediation.</div>
+    </div>
+  `;
+  document.getElementById("actors-list").innerHTML = `<div class="empty-state"><div class="icon">🎭</div><div>Actors will appear here as the conversation builds the conflict graph.</div></div>`;
+  document.getElementById("theories-list").innerHTML = `<div class="empty-state"><div class="icon">📚</div><div>Theories will be matched as the graph builds.</div></div>`;
+  document.getElementById("resolve-content").innerHTML = `<div class="empty-state"><div class="icon">🤝</div><div>Resolution proposals will appear here.</div></div>`;
+  document.getElementById("health-bar-fill").style.width = "0%";
+  document.getElementById("health-score-val").textContent = "0%";
+  document.getElementById("gaps-list").innerHTML = "";
+  ["actors","claims","interests","constraints","leverages","commitments","events","narratives"].forEach(k => {
+    const el = document.getElementById(`s-${k}`);
+    if (el) el.textContent = "0";
+  });
+
+  // Reconnect
+  sessionId = "s_" + Math.random().toString(36).slice(2, 10);
+  if (connected) { disconnect(); setTimeout(connect, 400); }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  fetchStyles();
+  fetchCaseTypes();
+
+  // Drag-drop for upload
+  const area = document.getElementById("upload-area");
+  area.addEventListener("dragover", e => { e.preventDefault(); area.classList.add("dragover"); });
+  area.addEventListener("dragleave", () => area.classList.remove("dragover"));
+  area.addEventListener("drop", e => {
+    e.preventDefault();
+    area.classList.remove("dragover");
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = ev => sendDocumentToAgent(ev.target.result, file.name);
+      reader.readAsText(file);
+    }
+  });
+
+  // Poll graph for updates when not connected
+  setInterval(async () => {
+    if (!connected) return;
+    try {
+      const r = await fetch("/api/graph");
+      const data = await r.json();
+      updateGraph(data, data.health);
+    } catch(e) {}
+  }, 5000);
+});
+</script>
+</body>
+</html>

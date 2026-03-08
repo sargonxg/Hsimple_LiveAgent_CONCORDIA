@@ -4,7 +4,7 @@ CONCORDIA — FastAPI Bidi-Streaming Server
 Multi-party mediation server with:
   - WebSocket bidi-streaming for real-time mediation (ADK Live API)
   - REST API for graph state, health, configuration, document upload
-  - Runtime agent reconfiguration (mediator style + case type)
+  - Runtime agent reconfiguration (mediator style + case type + objective)
   - Session tracking with per-party awareness
 """
 
@@ -71,6 +71,9 @@ runner = Runner(
     session_service=session_service,
 )
 
+# Current mediation objective (shared across all parties in this session)
+_current_objective: str = ""
+
 
 # ── Request/Response Models ──────────────────────────────────────────────────
 
@@ -85,8 +88,13 @@ class UploadDocumentRequest(PydanticBaseModel):
 
 
 class ConfigureRequest(PydanticBaseModel):
-    mediator_style: str = "empathetic"  # empathetic, analytical, directive
-    case_type: str = "workplace"  # workplace, family, commercial, community, geopolitical
+    mediator_style: str = "empathetic"
+    case_type: str = "workplace"
+    objective: str = ""
+
+
+class ObjectiveRequest(PydanticBaseModel):
+    objective: str
 
 
 class ResetRequest(PydanticBaseModel):
@@ -122,6 +130,7 @@ async def api_get_status():
         "title": graph.case_title,
         "phase": graph.phase,
         "parties": graph.parties,
+        "objective": _current_objective,
         "counts": {
             "actors": len(graph.actors),
             "claims": len(graph.claims),
@@ -138,6 +147,12 @@ async def api_get_status():
     }
 
 
+@app.get("/api/party-health/{party_id}")
+async def api_party_health(party_id: str):
+    """Return health check for a specific party's contributions."""
+    return graph.per_party_health_check(party_id)
+
+
 # ── REST Endpoints — Configuration ──────────────────────────────────────────
 
 @app.post("/api/set-key")
@@ -150,19 +165,41 @@ async def set_api_key(req: ApiKeyRequest):
 
 @app.post("/api/configure")
 async def configure(req: ConfigureRequest):
-    """Reconfigure mediator style and case type. Rebuilds agent hierarchy."""
+    """Reconfigure mediator style, case type, and objective. Rebuilds agent hierarchy."""
+    global _current_objective
     import concordia_agent
-    new_root = build_agents(req.mediator_style, req.case_type)
+    _current_objective = req.objective
+    new_root = build_agents(req.mediator_style, req.case_type, req.objective)
     concordia_agent.root_agent = new_root
-    # Rebuild runner with new agent
     global runner
     runner = Runner(app_name=APP_NAME, agent=new_root, session_service=session_service)
-    logger.info(f"Reconfigured: style={req.mediator_style}, case_type={req.case_type}")
+    logger.info(f"Reconfigured: style={req.mediator_style}, case_type={req.case_type}, objective_len={len(req.objective)}")
     return {
         "status": "configured",
         "mediator_style": req.mediator_style,
         "case_type": req.case_type,
+        "objective": req.objective,
     }
+
+
+@app.post("/api/set-objective")
+async def set_objective(req: ObjectiveRequest):
+    """Update the mediation objective and rebuild agents (keeps current style/case type)."""
+    global _current_objective
+    _current_objective = req.objective
+    import concordia_agent
+    # Rebuild with current style/case type + new objective
+    # We keep the same model config but update objective
+    new_root = build_agents(
+        os.getenv("CONCORDIA_STYLE", "empathetic"),
+        os.getenv("CONCORDIA_CASE_TYPE", "workplace"),
+        req.objective,
+    )
+    concordia_agent.root_agent = new_root
+    global runner
+    runner = Runner(app_name=APP_NAME, agent=new_root, session_service=session_service)
+    logger.info(f"Objective updated: {req.objective[:80]}")
+    return {"status": "ok", "objective": req.objective}
 
 
 @app.get("/api/styles")
@@ -186,6 +223,18 @@ async def get_theories():
     return get_applicable_theories(ontology.graph)
 
 
+@app.get("/api/common-ground")
+async def api_common_ground():
+    """Return common ground analysis: shared interests, broken commitments, leverage balance."""
+    return ontology.graph.find_common_ground()
+
+
+@app.get("/api/graph-summary")
+async def api_graph_summary():
+    """Return a concise text summary of the conflict graph for display."""
+    return {"summary": ontology.graph.graph_summary_for_agent()}
+
+
 # ── REST Endpoints — Document Upload & Reset ─────────────────────────────────
 
 @app.post("/api/upload")
@@ -201,12 +250,14 @@ async def upload_document(req: UploadDocumentRequest):
 @app.post("/api/reset")
 async def reset_graph(req: ResetRequest = ResetRequest()):
     """Reset the conflict graph to empty state."""
+    global _current_objective
     from concordia_agent.ontology import ConflictGraph
     ontology.graph = ConflictGraph()
     ontology.active_party = "default"
-    # Update the module-level reference
     import concordia_agent
     concordia_agent.graph = ontology.graph
+    if not req.keep_config:
+        _current_objective = ""
     logger.info("Graph reset.")
     return {"status": "reset"}
 
@@ -263,12 +314,13 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
             app_name=APP_NAME, user_id=user_id, session_id=session_id
         )
 
-    # Send initial graph state
+    # Send initial graph state and objective
     try:
         await websocket.send_json({
             "type": "graph_update",
             "graph": json.loads(graph.model_dump_json()),
             "health": graph.health_check(),
+            "objective": _current_objective,
         })
     except Exception:
         pass
@@ -362,6 +414,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, session_id: str
                                 "type": "graph_update",
                                 "graph": graph_data,
                                 "health": health,
+                                "objective": _current_objective,
                             })
                         except Exception as e:
                             logger.error(f"Error sending tool update: {e}")
