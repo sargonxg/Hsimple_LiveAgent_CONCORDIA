@@ -262,6 +262,208 @@ async def reset_graph(req: ResetRequest = ResetRequest()):
     return {"status": "reset"}
 
 
+@app.post("/api/load-demo")
+async def load_demo():
+    """Load a pre-built demo conflict scenario (Maria Chen vs. Greenfield Properties lease dispute).
+
+    Populates the conflict graph with a complete, realistic landlord-tenant dispute
+    including actors, claims, interests, constraints, leverage, events, commitments,
+    and narratives — enabling all app features without a live Gemini API session.
+    """
+    from concordia_agent.ontology import (
+        ConflictGraph, Actor, ActorType, Claim, ClaimType,
+        Interest, InterestType, Constraint, ConstraintType,
+        Leverage, LeverageType, Commitment, CommitmentStatus,
+        Event, EventType, Narrative, Edge, EscalationLevel, Phase,
+    )
+
+    g = ConflictGraph()
+    g.case_title = "Chen v. Greenfield Properties — Lease Termination & Deposit Dispute"
+    g.case_summary = (
+        "Maria Chen, a software engineer, is in dispute with her landlord David Park "
+        "(representing Greenfield Properties) over the wrongful withholding of a $3,200 "
+        "security deposit and the circumstances of her lease termination. Maria alleges the "
+        "apartment had undisclosed heating defects and that the eviction notice was retaliatory "
+        "after she filed an official maintenance complaint. David claims the deposit covers "
+        "cleaning and minor damage beyond normal wear, and that the termination was valid under "
+        "clause 14 of the lease agreement."
+    )
+    g.escalation_level = EscalationLevel.ESCALATING
+    g.phase = Phase.STRUCTURE
+    g.parties = ["party1", "party2"]
+
+    # ── Actors ────────────────────────────────────────────────────────────────
+    maria = Actor(
+        name="Maria Chen",
+        actor_type=ActorType.INDIVIDUAL,
+        description="Software engineer, former tenant of 4B Lakeview Apartments",
+        role_in_conflict="Complainant / former tenant",
+        contributed_by="party1",
+    )
+    david = Actor(
+        name="David Park",
+        actor_type=ActorType.INDIVIDUAL,
+        description="Property manager for Greenfield Properties",
+        role_in_conflict="Respondent / landlord representative",
+        contributed_by="party2",
+    )
+    greenfield = Actor(
+        name="Greenfield Properties",
+        actor_type=ActorType.ORGANIZATION,
+        description="Residential property management company, owns 4B Lakeview",
+        role_in_conflict="Organizational defendant",
+        contributed_by="party2",
+    )
+    g.actors.extend([maria, david, greenfield])
+
+    # ── Claims ────────────────────────────────────────────────────────────────
+    c1 = Claim(claim_type=ClaimType.DEMAND, content="Return $3,200 security deposit in full",
+               source_actor_id=maria.id, target_actor_id=david.id, contributed_by="party1")
+    c2 = Claim(claim_type=ClaimType.ACCUSATION, content="Retaliatory eviction: notice issued 6 days after formal maintenance complaint",
+               source_actor_id=maria.id, target_actor_id=david.id, contributed_by="party1")
+    c3 = Claim(claim_type=ClaimType.GRIEVANCE, content="Heating system was broken for 47 days — never disclosed at move-in",
+               source_actor_id=maria.id, target_actor_id=greenfield.id, contributed_by="party1")
+    c4 = Claim(claim_type=ClaimType.JUSTIFICATION, content="Deposit withheld per lease clause 8: cleaning costs $890, carpet damage $680",
+               source_actor_id=david.id, target_actor_id=maria.id, contributed_by="party2")
+    c5 = Claim(claim_type=ClaimType.JUSTIFICATION, content="Termination issued under clause 14 (repeated late rent). First late payment in 22 months triggered a valid notice",
+               source_actor_id=david.id, target_actor_id=maria.id, contributed_by="party2")
+    c6 = Claim(claim_type=ClaimType.PROPOSAL, content="Willing to return 50% of deposit ($1,600) if Maria drops the retaliation claim",
+               source_actor_id=david.id, target_actor_id=maria.id, contributed_by="party2")
+    g.claims.extend([c1, c2, c3, c4, c5, c6])
+
+    # ── Interests ─────────────────────────────────────────────────────────────
+    i1 = Interest(interest_type=InterestType.ECONOMIC, description="Needs deposit to cover first/last month rent for new apartment",
+                  actor_id=maria.id, priority=5, contributed_by="party1")
+    i2 = Interest(interest_type=InterestType.RECOGNITION, description="Wants acknowledgment that maintenance was neglected and eviction was unfair",
+                  actor_id=maria.id, priority=4, contributed_by="party1")
+    i3 = Interest(interest_type=InterestType.SECURITY, description="Concerned about rental history record and ability to secure future housing",
+                  actor_id=maria.id, priority=4, contributed_by="party1")
+    i4 = Interest(interest_type=InterestType.ECONOMIC, description="Minimize financial exposure: avoid litigation costs and precedent for other tenants",
+                  actor_id=david.id, priority=5, contributed_by="party2")
+    i5 = Interest(interest_type=InterestType.PROCEDURAL, description="Establish that lease clauses are enforceable to protect future tenancy management",
+                  actor_id=david.id, priority=4, contributed_by="party2")
+    i6 = Interest(interest_type=InterestType.SECURITY, description="Protect company reputation — avoid public record of retaliation judgment",
+                  actor_id=greenfield.id, priority=5, contributed_by="party2")
+    g.interests.extend([i1, i2, i3, i4, i5, i6])
+
+    # ── Constraints ───────────────────────────────────────────────────────────
+    con1 = Constraint(constraint_type=ConstraintType.LEGAL, description="State landlord-tenant law: deposits must be returned within 21 days with itemized deductions",
+                      affects_actor_ids=[david.id, greenfield.id], contributed_by="party1")
+    con2 = Constraint(constraint_type=ConstraintType.FINANCIAL, description="Maria's new apartment deposit due in 12 days — cash flow critical",
+                      affects_actor_ids=[maria.id], contributed_by="party1")
+    con3 = Constraint(constraint_type=ConstraintType.TEMPORAL, description="Small claims court filing deadline: 30 days from deposit withholding notice",
+                      affects_actor_ids=[maria.id], contributed_by="party1")
+    con4 = Constraint(constraint_type=ConstraintType.LEGAL, description="Anti-retaliation statute: eviction within 90 days of maintenance complaint creates presumption of retaliation",
+                      affects_actor_ids=[david.id, greenfield.id], contributed_by="party1")
+    con5 = Constraint(constraint_type=ConstraintType.STRUCTURAL, description="Greenfield Properties manages 340 units — retaliation precedent threatens business model",
+                      affects_actor_ids=[greenfield.id], contributed_by="party2")
+    g.constraints.extend([con1, con2, con3, con4, con5])
+
+    # ── Leverage ──────────────────────────────────────────────────────────────
+    l1 = Leverage(leverage_type=LeverageType.COERCIVE, description="Maria can file in small claims court for 3x deposit damages under retaliation statute",
+                  held_by_actor_id=maria.id, target_actor_id=greenfield.id, strength=4, contributed_by="party1")
+    l2 = Leverage(leverage_type=LeverageType.INFORMATIONAL, description="Maria has documented heating complaints with timestamps and photos",
+                  held_by_actor_id=maria.id, target_actor_id=david.id, strength=4, contributed_by="party1")
+    l3 = Leverage(leverage_type=LeverageType.STRUCTURAL, description="Greenfield can issue negative rental reference, affecting Maria's ability to rent elsewhere",
+                  held_by_actor_id=greenfield.id, target_actor_id=maria.id, strength=3, contributed_by="party2")
+    l4 = Leverage(leverage_type=LeverageType.NORMATIVE, description="Lease clause 14 gives procedural cover for termination regardless of motive",
+                  held_by_actor_id=david.id, target_actor_id=maria.id, strength=3, contributed_by="party2")
+    g.leverages.extend([l1, l2, l3, l4])
+
+    # ── Commitments ───────────────────────────────────────────────────────────
+    k1 = Commitment(description="Greenfield promised in writing to fix heating system by November 15",
+                    committed_actor_id=greenfield.id, to_actor_id=maria.id,
+                    status=CommitmentStatus.BROKEN, contributed_by="party1")
+    k2 = Commitment(description="Maria agreed to clean the apartment to 'move-in condition' per lease clause 7",
+                    committed_actor_id=maria.id, to_actor_id=greenfield.id,
+                    status=CommitmentStatus.FULFILLED, contributed_by="party2")
+    g.commitments.extend([k1, k2])
+
+    # ── Events ────────────────────────────────────────────────────────────────
+    e1 = Event(event_type=EventType.TRIGGER, description="Heating system failed during cold snap; Maria reported issue to maintenance portal",
+               date="2024-11-01", involved_actor_ids=[maria.id, greenfield.id], contributed_by="party1")
+    e2 = Event(event_type=EventType.ESCALATION, description="After 47 days without repair, Maria filed formal complaint with City Housing Authority",
+               date="2024-12-18", involved_actor_ids=[maria.id, greenfield.id], contributed_by="party1")
+    e3 = Event(event_type=EventType.ESCALATION, description="David issued 30-day termination notice citing clause 14 (one day of late rent, Dec 1)",
+               date="2024-12-24", involved_actor_ids=[david.id, maria.id], contributed_by="party2")
+    e4 = Event(event_type=EventType.NEGOTIATION, description="Maria requested mediation in lieu of small claims court; David agreed",
+               date="2025-01-10", involved_actor_ids=[maria.id, david.id], contributed_by="party1")
+    e5 = Event(event_type=EventType.VIOLATION, description="Deposit not returned within statutory 21-day window; no itemized deduction letter provided",
+               date="2025-01-14", involved_actor_ids=[greenfield.id, maria.id], contributed_by="party1")
+    g.events.extend([e1, e2, e3, e4, e5])
+
+    # ── Narratives ────────────────────────────────────────────────────────────
+    n1 = Narrative(description="Maria sees herself as a responsible tenant who maintained the unit, paid rent on time for 22 months, and was evicted as punishment for exercising her legal right to complain",
+                   held_by_actor_id=maria.id, frames=["victim", "retaliation", "injustice", "rights_violation"],
+                   contributed_by="party1")
+    n2 = Narrative(description="David sees Maria as a difficult tenant who left the unit in poor condition and is exploiting a technicality to avoid responsibility for legitimate cleaning charges",
+                   held_by_actor_id=david.id, frames=["opportunism", "system_abuse", "entitlement"],
+                   contributed_by="party2")
+    g.narratives.extend([n1, n2])
+
+    # ── Edges ─────────────────────────────────────────────────────────────────
+    for claim in [c1, c2, c3]:
+        g.edges.append(Edge(source_id=maria.id, target_id=claim.id, relationship="MAKES_CLAIM",
+                            description=f"Maria makes {claim.claim_type}"))
+        if claim.target_actor_id:
+            g.edges.append(Edge(source_id=claim.id, target_id=claim.target_actor_id,
+                                relationship="CLAIM_TARGETS", description="Claim targets"))
+    for claim in [c4, c5, c6]:
+        g.edges.append(Edge(source_id=david.id, target_id=claim.id, relationship="MAKES_CLAIM",
+                            description=f"David makes {claim.claim_type}"))
+        g.edges.append(Edge(source_id=claim.id, target_id=maria.id, relationship="CLAIM_TARGETS",
+                            description="Claim targets Maria"))
+    for interest in [i1, i2, i3]:
+        g.edges.append(Edge(source_id=maria.id, target_id=interest.id, relationship="HAS_INTEREST",
+                            description=f"Maria: {interest.interest_type}"))
+    for interest in [i4, i5]:
+        g.edges.append(Edge(source_id=david.id, target_id=interest.id, relationship="HAS_INTEREST",
+                            description=f"David: {interest.interest_type}"))
+    g.edges.append(Edge(source_id=greenfield.id, target_id=i6.id, relationship="HAS_INTEREST",
+                        description="Greenfield: security interest"))
+    for lev in [l1, l2]:
+        g.edges.append(Edge(source_id=maria.id, target_id=lev.id, relationship="HOLDS_LEVERAGE",
+                            description=f"Maria holds {lev.leverage_type} leverage"))
+    for lev in [l3, l4]:
+        g.edges.append(Edge(source_id=greenfield.id if lev == l3 else david.id, target_id=lev.id,
+                            relationship="HOLDS_LEVERAGE", description=f"Holds {lev.leverage_type}"))
+    g.edges.append(Edge(source_id=maria.id, target_id=n1.id, relationship="HOLDS_NARRATIVE",
+                        description="Maria's narrative"))
+    g.edges.append(Edge(source_id=david.id, target_id=n2.id, relationship="HOLDS_NARRATIVE",
+                        description="David's narrative"))
+    g.edges.append(Edge(source_id=greenfield.id, target_id=david.id, relationship="EMPLOYS",
+                        description="Greenfield employs David as property manager"))
+    g.edges.append(Edge(source_id=k1.id, target_id=maria.id, relationship="BROKEN_COMMITMENT_AFFECTS",
+                        description="Broken heating promise affects Maria"))
+
+    # Install demo graph as the active graph
+    ontology.graph = g
+    import concordia_agent
+    concordia_agent.graph = g
+
+    health = g.health_check()
+    common = g.find_common_ground()
+    logger.info("Demo scenario loaded: Chen v. Greenfield Properties")
+    return {
+        "status": "loaded",
+        "case_title": g.case_title,
+        "health": health,
+        "counts": {
+            "actors": len(g.actors),
+            "claims": len(g.claims),
+            "interests": len(g.interests),
+            "constraints": len(g.constraints),
+            "leverages": len(g.leverages),
+            "commitments": len(g.commitments),
+            "events": len(g.events),
+            "narratives": len(g.narratives),
+            "edges": len(g.edges),
+        },
+        "shared_interests_count": len(common["shared_interests"]),
+        "broken_commitments_count": len(common["broken_commitments"]),
+    }
+
+
 # ── WebSocket Helpers ────────────────────────────────────────────────────────
 
 def _build_run_config() -> RunConfig:
