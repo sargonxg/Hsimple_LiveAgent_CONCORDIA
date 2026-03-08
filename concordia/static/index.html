@@ -995,7 +995,8 @@ input::placeholder { color: var(--muted); }
       <div class="chat-input-row">
         <button id="audio-btn" class="audio-btn" onclick="toggleAudio()" title="Hold to speak">🎤</button>
         <textarea id="chat-input" placeholder="Type your message... (Enter to send, Shift+Enter for new line)" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-        <button id="connect-btn" class="send-btn" onclick="handleConnect()" title="Connect">⚡</button>
+        <button id="connect-btn" class="send-btn" onclick="handleConnect()" title="Connect to live AI">⚡</button>
+        <button id="demo-btn" class="send-btn" onclick="loadDemoScenario()" title="Load Demo Scenario (no API key required)" style="background:rgba(123,108,246,0.15);border-color:var(--accent2);color:var(--accent2);font-size:11px;padding:0 10px;width:auto">Demo</button>
         <button id="send-btn" class="send-btn" onclick="sendMessage()" title="Send" style="display:none">➤</button>
       </div>
       <div id="audio-level-bar" style="height:3px;background:var(--border);border-radius:2px;display:none">
@@ -1844,6 +1845,82 @@ async function confirmReset() {
   // Reconnect
   sessionId = "s_" + Math.random().toString(36).slice(2, 10);
   if (connected) { disconnect(); setTimeout(connect, 400); }
+}
+
+// ── Demo Mode ────────────────────────────────────────────────────────────────
+async function loadDemoScenario() {
+  addMessage("system", "Loading demo scenario: Chen v. Greenfield Properties (Lease Dispute)...");
+  try {
+    const r = await fetch("/api/reset", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keep_config: false }),
+    });
+  } catch(e) {}
+
+  try {
+    const r = await fetch("/api/load-demo", { method: "POST" });
+    if (!r.ok) throw new Error("Demo endpoint returned " + r.status);
+    const data = await r.json();
+
+    // Fetch and render the full graph
+    const gr = await fetch("/api/graph");
+    const graphData = await gr.json();
+    updateGraph(graphData, graphData.health);
+
+    // Simulate demo conversation
+    const demoConversation = [
+      { type: "party1", msg: "Hi. I'm Maria Chen. I was evicted last month and my landlord is refusing to return my $3,200 deposit." },
+      { type: "agent", msg: "Maria, thank you for coming in. That sounds really stressful — especially the financial pressure. I want to understand the full picture. Tell me: when did the eviction notice arrive, and did anything happen in the days before it?" },
+      { type: "party1", msg: "Yes — I had filed a complaint with the City Housing Authority six days earlier because the heating had been broken for 47 days. They fixed nothing. Then boom, termination notice." },
+      { type: "agent", msg: "So the timeline is: 47 days of broken heating → housing complaint → notice 6 days later. I've noted that sequence carefully. What was the reason given on the notice?" },
+      { type: "party1", msg: "They said I paid rent one day late in December. I'd been there 22 months and that was literally the first time." },
+      { type: "tool", tool: "add_event", args: { event_type: "escalation", description: "30-day notice issued 6 days after City Housing Authority complaint" } },
+      { type: "agent", msg: "I hear you. One late payment after 22 months, right after a formal complaint — that's a pattern that matters legally. What outcome would actually help you most right now?" },
+      { type: "party1", msg: "I need my deposit back. I have to pay first and last month for my new place in 12 days. And honestly, I want them to admit what they did." },
+      { type: "tool", tool: "add_interest", args: { interest_type: "economic", description: "Needs deposit to cover new apartment deposit", priority: 5 } },
+      { type: "tool", tool: "add_interest", args: { interest_type: "recognition", description: "Wants acknowledgment of retaliation", priority: 4 } },
+      { type: "agent", msg: "That's clear — both the financial urgency and the need to be heard. Now let me hear from the other side. David, thank you for being here. Can you walk me through your perspective?" },
+      { type: "party2", msg: "Look, we followed the lease to the letter. Clause 8 allows us to deduct cleaning and damage costs. The carpet was stained and the unit needed professional cleaning. That's $1,570 combined." },
+      { type: "agent", msg: "I understand. Can you tell me: was an itemized deduction letter sent within the statutory 21-day window?" },
+      { type: "party2", msg: "We... sent it on day 23. But the charges are legitimate." },
+      { type: "tool", tool: "add_constraint", args: { constraint_type: "legal", description: "State law: deposit must be returned with itemized deductions within 21 days" } },
+      { type: "agent", msg: "That timing detail matters — a lot. But let's focus on what a solution looks like. What's driving Greenfield's position here beyond the $1,570?" },
+      { type: "party2", msg: "We manage 340 units. If we pay out every time a tenant files a complaint right before we issue a notice, we lose control of the business. We need the lease clauses to mean something." },
+      { type: "tool", tool: "add_interest", args: { interest_type: "procedural", description: "Lease clause enforceability across 340-unit portfolio", priority: 4 } },
+      { type: "agent", msg: "That's a legitimate operational concern. I think I can see some common ground emerging between what Maria needs and what Greenfield needs to protect. Let me run a full analysis..." },
+    ];
+
+    let delay = 300;
+    for (const item of demoConversation) {
+      await new Promise(res => setTimeout(res, delay));
+      if (item.type === "tool") {
+        addToolCall(item.tool, item.args || {});
+        delay = 400;
+      } else if (item.type === "agent") {
+        addMessage("agent", item.msg, "CONCORDIA");
+        delay = 1200;
+      } else if (item.type === "party1") {
+        addMessage("party1", item.msg);
+        delay = 900;
+      } else if (item.type === "party2") {
+        addMessage("party2", item.msg);
+        delay = 900;
+      }
+    }
+
+    await new Promise(res => setTimeout(res, 600));
+    addMessage("system", `Demo loaded: ${data.case_title}. Graph health: ${data.health?.score || 0}%. Use the tabs on the right to explore Actors, Graph, Theories, and Resolve.`);
+
+    // Auto-fetch theories and show graph tab
+    await fetchTheories();
+    setTimeout(() => {
+      const gr2 = fetch("/api/graph").then(r => r.json()).then(d => { updateGraph(d, d.health); renderGraphCanvas(d); });
+    }, 200);
+
+  } catch(err) {
+    addMessage("error", "Demo failed to load: " + err.message + ". Is the server running?");
+    console.error(err);
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
